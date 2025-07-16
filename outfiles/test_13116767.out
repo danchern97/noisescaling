@@ -1,0 +1,75 @@
+============================================================================================== 
+Warning! Mixing Conda and module environments may lead to corruption of the
+user environment. 
+We do not recommend users mixing those two environments unless absolutely
+necessary. Note that 
+SURF does not provide any support for Conda environment.
+For more information, please refer to our software policy page:
+https://servicedesk.surf.nl/wiki/display/WIKI/Software+policy+Snellius#SoftwarepolicySnellius-UseofAnacondaandMinicondaenvironmentsonSnellius 
+
+Remember that many packages have already been installed on the system and can
+be loaded using 
+the 'module load <package__name>' command. If you are uncertain if a package is
+already available 
+on the system, please use 'module avail' or 'module spider' to search for it.
+============================================================================================== 
+[07/11/2025 14:34:29 INFO]: 
+_________________________________________________
+
+[07/11/2025 14:34:29 INFO]: test_model.py main() running.
+[07/11/2025 14:34:29 INFO]: problem:
+  hyp:
+    alpha: 1
+    clip: 1
+    epochs: 150
+    lr: 0.001
+    lr_decay: step
+    lr_factor: 0.1
+    lr_schedule:
+    - 60
+    - 100
+    lr_throttle: false
+    optimizer: adam
+    save_period: -1
+    test_batch_size: 1000
+    test_mode: default
+    train_batch_size: 300
+    train_mode: progressive
+    val_period: 20
+    warmup_period: 10
+  model:
+    model: dt_net_recall_1d
+    model_path: outputs/training_default/training-worldly-Latangela
+    width: 400
+    max_iters: 30
+    test_iterations:
+      low: 30
+      high: 50
+  name: prefix_sums
+  test_data: 512
+  train_data: 32
+name: testing_default
+quick_test: false
+run_id: glummest-Tyrene
+
+Error executing job with overrides: ['problem.model.model_path=outputs/training_default/training-worldly-Latangela', '+run_id=glummest-Tyrene']
+Traceback (most recent call last):
+  File "test_model.py", line 43, in main
+    training_args = OmegaConf.load(os.path.join(cfg.problem.model.model_path, ".hydra/config.yaml"))
+FileNotFoundError: [Errno 2] No such file or directory: '/gpfs/home5/mmazuryk1/AGI/deep-thinking/outputs/testing_default/testing-glummest-Tyrene/outputs/training_default/training-worldly-Latangela/.hydra/config.yaml'
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+
+JOB STATISTICS
+==============
+Job ID: 13116767
+Cluster: snellius
+User/Group: mmazuryk1/mmazuryk1
+State: FAILED (exit code 1)
+Nodes: 1
+Cores per node: 18
+CPU Utilized: 00:00:05
+CPU Efficiency: 1.63% of 00:05:06 core-walltime
+Job Wall-clock time: 00:00:17
+Memory Utilized: 1.53 MB
+Memory Efficiency: 0.00% of 120.00 GB (120.00 GB/node)

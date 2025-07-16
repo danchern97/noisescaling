@@ -1,0 +1,707 @@
+============================================================================================== 
+Warning! Mixing Conda and module environments may lead to corruption of the
+user environment. 
+We do not recommend users mixing those two environments unless absolutely
+necessary. Note that 
+SURF does not provide any support for Conda environment.
+For more information, please refer to our software policy page:
+https://servicedesk.surf.nl/wiki/display/WIKI/Software+policy+Snellius#SoftwarepolicySnellius-UseofAnacondaandMinicondaenvironmentsonSnellius 
+
+Remember that many packages have already been installed on the system and can
+be loaded using 
+the 'module load <package__name>' command. If you are uncertain if a package is
+already available 
+on the system, please use 'module avail' or 'module spider' to search for it.
+============================================================================================== 
+[07/14/2025 14:43:58 INFO]: 
+_________________________________________________
+
+[07/14/2025 14:43:58 INFO]: train_model.py main() running.
+[07/14/2025 14:43:58 INFO]: problem:
+  hyp:
+    alpha: 1
+    clip: 1
+    epochs: 150
+    lr: 0.001
+    lr_decay: step
+    lr_factor: 0.1
+    lr_schedule:
+    - 60
+    - 100
+    lr_throttle: false
+    optimizer: adam
+    save_period: -1
+    test_batch_size: 1000
+    test_mode: default
+    train_batch_size: 100
+    train_mode: progressive
+    val_period: 20
+    warmup_period: 10
+  model:
+    model: resnet_1d
+    model_path: null
+    width: 400
+    max_iters: 1
+    noise_type: none
+    noise_block_idx: 1
+    test_iterations:
+      low: 30
+      high: 40
+  name: prefix_sums
+  test_data: 512
+  train_data: 32
+train_log: train_log
+name: prefix_sums_ablation
+run_id: sluttish-Nykia
+
+Files already downloaded and verified
+Loading data with 32 bits.
+Files already downloaded and verified
+Loading data with 512 bits.
+Using model resnet_1d with noise_type none and noise_block_idx 1.
+[07/14/2025 14:43:59 INFO]: This resnet_1d has 1.923 million parameters.
+[07/14/2025 14:43:59 INFO]: Training will start at epoch 0.
+[07/14/2025 14:44:00 INFO]: ==> Starting training for 150 epochs...
+/home/mmazuryk1/.conda/envs/agi/lib/python3.8/site-packages/easy_to_hard_data.py:215: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  self.inputs = torch.load(inputs_path).unsqueeze(1) - 0.5
+/home/mmazuryk1/.conda/envs/agi/lib/python3.8/site-packages/easy_to_hard_data.py:216: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  self.targets = torch.load(targets_path).long()
+  0%|          | 0/80 [00:00<?, ?it/s]  1%|▏         | 1/80 [00:00<01:11,  1.11it/s] 25%|██▌       | 20/80 [00:01<00:02, 26.92it/s] 50%|█████     | 40/80 [00:01<00:00, 55.00it/s] 75%|███████▌  | 60/80 [00:01<00:00, 82.03it/s]100%|██████████| 80/80 [00:01<00:00, 106.62it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:02 INFO]: Training loss at epoch 0: 0.6828380122780799
+[07/14/2025 14:44:02 INFO]: Training accuracy at epoch 0: 0.0125
+[07/14/2025 14:44:02 INFO]: Val accuracy at epoch 0: 0.0
+[07/14/2025 14:44:02 INFO]: Saving model to: model_best.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 194.97it/s] 50%|█████     | 40/80 [00:00<00:00, 196.30it/s] 75%|███████▌  | 60/80 [00:00<00:00, 196.75it/s]100%|██████████| 80/80 [00:00<00:00, 196.52it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:02 INFO]: Training loss at epoch 1: 0.6385330848395825
+[07/14/2025 14:44:02 INFO]: Training accuracy at epoch 1: 0.0
+[07/14/2025 14:44:02 INFO]: Val accuracy at epoch 1: 0.0
+[07/14/2025 14:44:02 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 24%|██▍       | 19/80 [00:00<00:00, 188.35it/s] 49%|████▉     | 39/80 [00:00<00:00, 193.21it/s] 74%|███████▍  | 59/80 [00:00<00:00, 194.93it/s] 99%|█████████▉| 79/80 [00:00<00:00, 195.61it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:03 INFO]: Training loss at epoch 2: 0.6190023623406887
+[07/14/2025 14:44:03 INFO]: Training accuracy at epoch 2: 0.0125
+[07/14/2025 14:44:03 INFO]: Val accuracy at epoch 2: 0.0
+[07/14/2025 14:44:03 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 195.97it/s] 50%|█████     | 40/80 [00:00<00:00, 196.84it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.06it/s]100%|██████████| 80/80 [00:00<00:00, 197.35it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:03 INFO]: Training loss at epoch 3: 0.6008395306766033
+[07/14/2025 14:44:03 INFO]: Training accuracy at epoch 3: 0.0125
+[07/14/2025 14:44:03 INFO]: Val accuracy at epoch 3: 0.0
+[07/14/2025 14:44:03 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.55it/s] 50%|█████     | 40/80 [00:00<00:00, 197.29it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.37it/s]100%|██████████| 80/80 [00:00<00:00, 197.54it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:03 INFO]: Training loss at epoch 4: 0.5953609347343445
+[07/14/2025 14:44:03 INFO]: Training accuracy at epoch 4: 0.0
+[07/14/2025 14:44:03 INFO]: Val accuracy at epoch 4: 0.10000000149011612
+[07/14/2025 14:44:03 INFO]: Saving model to: model_best.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.45it/s] 50%|█████     | 40/80 [00:00<00:00, 197.04it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.29it/s]100%|██████████| 80/80 [00:00<00:00, 196.09it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:04 INFO]: Training loss at epoch 5: 0.5901739463210106
+[07/14/2025 14:44:04 INFO]: Training accuracy at epoch 5: 0.0125
+[07/14/2025 14:44:04 INFO]: Val accuracy at epoch 5: 0.0
+[07/14/2025 14:44:04 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.28it/s] 50%|█████     | 40/80 [00:00<00:00, 196.88it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.32it/s]100%|██████████| 80/80 [00:00<00:00, 197.54it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:04 INFO]: Training loss at epoch 6: 0.5871337376534939
+[07/14/2025 14:44:04 INFO]: Training accuracy at epoch 6: 0.0375
+[07/14/2025 14:44:04 INFO]: Val accuracy at epoch 6: 0.10000000149011612
+[07/14/2025 14:44:04 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 195.86it/s] 50%|█████     | 40/80 [00:00<00:00, 196.90it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.37it/s]100%|██████████| 80/80 [00:00<00:00, 197.65it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:05 INFO]: Training loss at epoch 7: 0.5808218277990818
+[07/14/2025 14:44:05 INFO]: Training accuracy at epoch 7: 0.1375
+[07/14/2025 14:44:05 INFO]: Val accuracy at epoch 7: 0.6000000238418579
+[07/14/2025 14:44:05 INFO]: Saving model to: model_best.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.51it/s] 50%|█████     | 40/80 [00:00<00:00, 196.43it/s] 75%|███████▌  | 60/80 [00:00<00:00, 195.58it/s]100%|██████████| 80/80 [00:00<00:00, 195.25it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:05 INFO]: Training loss at epoch 8: 0.5775914393365383
+[07/14/2025 14:44:05 INFO]: Training accuracy at epoch 8: 0.2625
+[07/14/2025 14:44:05 INFO]: Val accuracy at epoch 8: 0.0
+[07/14/2025 14:44:05 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 194.05it/s] 50%|█████     | 40/80 [00:00<00:00, 192.90it/s] 75%|███████▌  | 60/80 [00:00<00:00, 194.24it/s]100%|██████████| 80/80 [00:00<00:00, 195.64it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:06 INFO]: Training loss at epoch 9: 0.580697126686573
+[07/14/2025 14:44:06 INFO]: Training accuracy at epoch 9: 0.1625
+[07/14/2025 14:44:06 INFO]: Val accuracy at epoch 9: 0.4000000059604645
+[07/14/2025 14:44:06 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.72it/s] 50%|█████     | 40/80 [00:00<00:00, 197.56it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.82it/s]100%|██████████| 80/80 [00:00<00:00, 197.90it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:06 INFO]: Training loss at epoch 10: 0.5768895007669925
+[07/14/2025 14:44:06 INFO]: Training accuracy at epoch 10: 0.2375
+[07/14/2025 14:44:06 INFO]: Val accuracy at epoch 10: 0.30000001192092896
+[07/14/2025 14:44:06 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.87it/s] 50%|█████     | 40/80 [00:00<00:00, 197.55it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.86it/s]100%|██████████| 80/80 [00:00<00:00, 197.57it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:07 INFO]: Training loss at epoch 11: 0.573775677382946
+[07/14/2025 14:44:07 INFO]: Training accuracy at epoch 11: 0.3625
+[07/14/2025 14:44:07 INFO]: Val accuracy at epoch 11: 0.44999998807907104
+[07/14/2025 14:44:07 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 194.62it/s] 50%|█████     | 40/80 [00:00<00:00, 195.78it/s] 75%|███████▌  | 60/80 [00:00<00:00, 196.13it/s]100%|██████████| 80/80 [00:00<00:00, 197.01it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:07 INFO]: Training loss at epoch 12: 0.5720871761441231
+[07/14/2025 14:44:07 INFO]: Training accuracy at epoch 12: 0.45
+[07/14/2025 14:44:07 INFO]: Val accuracy at epoch 12: 0.949999988079071
+[07/14/2025 14:44:07 INFO]: Saving model to: model_best.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 197.21it/s] 50%|█████     | 40/80 [00:00<00:00, 197.81it/s] 75%|███████▌  | 60/80 [00:00<00:00, 198.00it/s]100%|██████████| 80/80 [00:00<00:00, 198.26it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:08 INFO]: Training loss at epoch 13: 0.57170085683465
+[07/14/2025 14:44:08 INFO]: Training accuracy at epoch 13: 0.475
+[07/14/2025 14:44:08 INFO]: Val accuracy at epoch 13: 0.6000000238418579
+[07/14/2025 14:44:08 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 193.66it/s] 50%|█████     | 40/80 [00:00<00:00, 196.41it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.24it/s]100%|██████████| 80/80 [00:00<00:00, 197.60it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:08 INFO]: Training loss at epoch 14: 0.5692115671932697
+[07/14/2025 14:44:08 INFO]: Training accuracy at epoch 14: 0.6375
+[07/14/2025 14:44:08 INFO]: Val accuracy at epoch 14: 0.4000000059604645
+[07/14/2025 14:44:08 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.85it/s] 50%|█████     | 40/80 [00:00<00:00, 197.90it/s] 75%|███████▌  | 60/80 [00:00<00:00, 198.21it/s]100%|██████████| 80/80 [00:00<00:00, 198.40it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:08 INFO]: Training loss at epoch 15: 0.5666975006461143
+[07/14/2025 14:44:08 INFO]: Training accuracy at epoch 15: 0.7375
+[07/14/2025 14:44:08 INFO]: Val accuracy at epoch 15: 0.8500000238418579
+[07/14/2025 14:44:08 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 197.46it/s] 50%|█████     | 40/80 [00:00<00:00, 197.83it/s] 75%|███████▌  | 60/80 [00:00<00:00, 198.02it/s]100%|██████████| 80/80 [00:00<00:00, 198.23it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:09 INFO]: Training loss at epoch 16: 0.5661708995699882
+[07/14/2025 14:44:09 INFO]: Training accuracy at epoch 16: 0.7625
+[07/14/2025 14:44:09 INFO]: Val accuracy at epoch 16: 1.0499999523162842
+[07/14/2025 14:44:09 INFO]: Saving model to: model_best.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.53it/s] 50%|█████     | 40/80 [00:00<00:00, 196.95it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.25it/s]100%|██████████| 80/80 [00:00<00:00, 197.34it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:09 INFO]: Training loss at epoch 17: 0.5644385337829589
+[07/14/2025 14:44:09 INFO]: Training accuracy at epoch 17: 0.8
+[07/14/2025 14:44:09 INFO]: Val accuracy at epoch 17: 0.800000011920929
+[07/14/2025 14:44:09 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.53it/s] 50%|█████     | 40/80 [00:00<00:00, 197.41it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.36it/s]100%|██████████| 80/80 [00:00<00:00, 195.02it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:10 INFO]: Training loss at epoch 18: 0.5638233482837677
+[07/14/2025 14:44:10 INFO]: Training accuracy at epoch 18: 0.9
+[07/14/2025 14:44:10 INFO]: Val accuracy at epoch 18: 0.8500000238418579
+[07/14/2025 14:44:10 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.89it/s] 50%|█████     | 40/80 [00:00<00:00, 197.82it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.58it/s]100%|██████████| 80/80 [00:00<00:00, 197.87it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:10 INFO]: Training loss at epoch 19: 0.5616819635033607
+[07/14/2025 14:44:10 INFO]: Training accuracy at epoch 19: 0.825
+[07/14/2025 14:44:10 INFO]: Val accuracy at epoch 19: 0.6000000238418579
+  0%|          | 0/10 [00:00<?, ?it/s] 10%|█         | 1/10 [00:00<00:02,  3.09it/s] 30%|███       | 3/10 [00:00<00:00,  7.76it/s] 50%|█████     | 5/10 [00:00<00:00, 10.87it/s] 70%|███████   | 7/10 [00:00<00:00, 12.97it/s] 90%|█████████ | 9/10 [00:00<00:00, 11.82it/s]                                                0%|          | 0/2 [00:00<?, ?it/s]                                       0%|          | 0/80 [00:00<?, ?it/s] 20%|██        | 16/80 [00:00<00:00, 151.22it/s] 40%|████      | 32/80 [00:00<00:00, 152.16it/s] 60%|██████    | 48/80 [00:00<00:00, 152.35it/s] 80%|████████  | 64/80 [00:00<00:00, 152.17it/s]100%|██████████| 80/80 [00:00<00:00, 152.26it/s]                                                [07/14/2025 14:44:12 INFO]: Training accuracy: {30: 0.574999988079071, 31: 0.574999988079071, 32: 0.574999988079071, 33: 0.574999988079071, 34: 0.574999988079071, 35: 0.574999988079071, 36: 0.574999988079071, 37: 0.574999988079071, 38: 0.574999988079071, 39: 0.574999988079071, 40: 0.574999988079071}
+[07/14/2025 14:44:12 INFO]: Val accuracy: {30: 0.6000000238418579, 31: 0.6000000238418579, 32: 0.6000000238418579, 33: 0.6000000238418579, 34: 0.6000000238418579, 35: 0.6000000238418579, 36: 0.6000000238418579, 37: 0.6000000238418579, 38: 0.6000000238418579, 39: 0.6000000238418579, 40: 0.6000000238418579}
+[07/14/2025 14:44:12 INFO]: Test accuracy (hard data): {30: 0.0, 31: 0.0, 32: 0.0, 33: 0.0, 34: 0.0, 35: 0.0, 36: 0.0, 37: 0.0, 38: 0.0, 39: 0.0, 40: 0.0}
+[07/14/2025 14:44:12 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 195.34it/s] 50%|█████     | 40/80 [00:00<00:00, 197.12it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.64it/s]100%|██████████| 80/80 [00:00<00:00, 197.96it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:12 INFO]: Training loss at epoch 20: 0.5594230122864247
+[07/14/2025 14:44:12 INFO]: Training accuracy at epoch 20: 0.8
+[07/14/2025 14:44:12 INFO]: Val accuracy at epoch 20: 0.949999988079071
+[07/14/2025 14:44:12 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.92it/s] 50%|█████     | 40/80 [00:00<00:00, 197.51it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.81it/s]100%|██████████| 80/80 [00:00<00:00, 198.07it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:13 INFO]: Training loss at epoch 21: 0.5584625482559205
+[07/14/2025 14:44:13 INFO]: Training accuracy at epoch 21: 0.925
+[07/14/2025 14:44:13 INFO]: Val accuracy at epoch 21: 1.4500000476837158
+[07/14/2025 14:44:13 INFO]: Saving model to: model_best.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.97it/s] 50%|█████     | 40/80 [00:00<00:00, 197.14it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.62it/s]100%|██████████| 80/80 [00:00<00:00, 197.51it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:13 INFO]: Training loss at epoch 22: 0.5559564620256424
+[07/14/2025 14:44:13 INFO]: Training accuracy at epoch 22: 0.9
+[07/14/2025 14:44:13 INFO]: Val accuracy at epoch 22: 2.0
+[07/14/2025 14:44:13 INFO]: Saving model to: model_best.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.22it/s] 50%|█████     | 40/80 [00:00<00:00, 196.22it/s] 75%|███████▌  | 60/80 [00:00<00:00, 196.69it/s]100%|██████████| 80/80 [00:00<00:00, 197.17it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:14 INFO]: Training loss at epoch 23: 0.5568699583411216
+[07/14/2025 14:44:14 INFO]: Training accuracy at epoch 23: 0.8125
+[07/14/2025 14:44:14 INFO]: Val accuracy at epoch 23: 0.8500000238418579
+[07/14/2025 14:44:14 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 195.87it/s] 50%|█████     | 40/80 [00:00<00:00, 197.12it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.41it/s]100%|██████████| 80/80 [00:00<00:00, 197.66it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:14 INFO]: Training loss at epoch 24: 0.5571232877671719
+[07/14/2025 14:44:14 INFO]: Training accuracy at epoch 24: 1.05
+[07/14/2025 14:44:14 INFO]: Val accuracy at epoch 24: 0.4000000059604645
+[07/14/2025 14:44:14 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 195.60it/s] 50%|█████     | 40/80 [00:00<00:00, 196.98it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.32it/s]100%|██████████| 80/80 [00:00<00:00, 197.66it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:14 INFO]: Training loss at epoch 25: 0.556040995568037
+[07/14/2025 14:44:14 INFO]: Training accuracy at epoch 25: 0.8875
+[07/14/2025 14:44:14 INFO]: Val accuracy at epoch 25: 0.6000000238418579
+[07/14/2025 14:44:14 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.77it/s] 50%|█████     | 40/80 [00:00<00:00, 197.47it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.70it/s]100%|██████████| 80/80 [00:00<00:00, 197.93it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:15 INFO]: Training loss at epoch 26: 0.5543484687805176
+[07/14/2025 14:44:15 INFO]: Training accuracy at epoch 26: 0.85
+[07/14/2025 14:44:15 INFO]: Val accuracy at epoch 26: 1.2000000476837158
+[07/14/2025 14:44:15 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 197.05it/s] 50%|█████     | 40/80 [00:00<00:00, 197.76it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.92it/s]100%|██████████| 80/80 [00:00<00:00, 197.79it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:15 INFO]: Training loss at epoch 27: 0.5518864259123802
+[07/14/2025 14:44:15 INFO]: Training accuracy at epoch 27: 1.125
+[07/14/2025 14:44:15 INFO]: Val accuracy at epoch 27: 1.0
+[07/14/2025 14:44:15 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.86it/s] 50%|█████     | 40/80 [00:00<00:00, 197.68it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.87it/s]100%|██████████| 80/80 [00:00<00:00, 197.50it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:16 INFO]: Training loss at epoch 28: 0.5522877350449562
+[07/14/2025 14:44:16 INFO]: Training accuracy at epoch 28: 0.9875
+[07/14/2025 14:44:16 INFO]: Val accuracy at epoch 28: 1.149999976158142
+[07/14/2025 14:44:16 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.79it/s] 50%|█████     | 40/80 [00:00<00:00, 197.32it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.61it/s]100%|██████████| 80/80 [00:00<00:00, 197.83it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:16 INFO]: Training loss at epoch 29: 0.5522520080208778
+[07/14/2025 14:44:16 INFO]: Training accuracy at epoch 29: 0.9625
+[07/14/2025 14:44:16 INFO]: Val accuracy at epoch 29: 0.949999988079071
+[07/14/2025 14:44:16 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.70it/s] 50%|█████     | 40/80 [00:00<00:00, 197.60it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.73it/s]100%|██████████| 80/80 [00:00<00:00, 197.85it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:17 INFO]: Training loss at epoch 30: 0.5522497400641442
+[07/14/2025 14:44:17 INFO]: Training accuracy at epoch 30: 0.8875
+[07/14/2025 14:44:17 INFO]: Val accuracy at epoch 30: 1.7999999523162842
+[07/14/2025 14:44:17 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.69it/s] 50%|█████     | 40/80 [00:00<00:00, 197.42it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.71it/s]100%|██████████| 80/80 [00:00<00:00, 197.70it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:17 INFO]: Training loss at epoch 31: 0.551892326772213
+[07/14/2025 14:44:17 INFO]: Training accuracy at epoch 31: 1.1625
+[07/14/2025 14:44:17 INFO]: Val accuracy at epoch 31: 0.6000000238418579
+[07/14/2025 14:44:17 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.64it/s] 50%|█████     | 40/80 [00:00<00:00, 197.20it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.46it/s]100%|██████████| 80/80 [00:00<00:00, 197.63it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:18 INFO]: Training loss at epoch 32: 0.5574454940855503
+[07/14/2025 14:44:18 INFO]: Training accuracy at epoch 32: 1.0375
+[07/14/2025 14:44:18 INFO]: Val accuracy at epoch 32: 0.949999988079071
+[07/14/2025 14:44:18 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.69it/s] 50%|█████     | 40/80 [00:00<00:00, 197.34it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.61it/s]100%|██████████| 80/80 [00:00<00:00, 197.80it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:18 INFO]: Training loss at epoch 33: 0.5506154619157314
+[07/14/2025 14:44:18 INFO]: Training accuracy at epoch 33: 0.7875
+[07/14/2025 14:44:18 INFO]: Val accuracy at epoch 33: 0.949999988079071
+[07/14/2025 14:44:18 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 195.79it/s] 50%|█████     | 40/80 [00:00<00:00, 197.09it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.35it/s]100%|██████████| 80/80 [00:00<00:00, 196.40it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:18 INFO]: Training loss at epoch 34: 0.5487508669495582
+[07/14/2025 14:44:18 INFO]: Training accuracy at epoch 34: 1.025
+[07/14/2025 14:44:18 INFO]: Val accuracy at epoch 34: 1.25
+[07/14/2025 14:44:18 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.37it/s] 50%|█████     | 40/80 [00:00<00:00, 197.10it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.35it/s]100%|██████████| 80/80 [00:00<00:00, 197.54it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:19 INFO]: Training loss at epoch 35: 0.5501826725900173
+[07/14/2025 14:44:19 INFO]: Training accuracy at epoch 35: 0.95
+[07/14/2025 14:44:19 INFO]: Val accuracy at epoch 35: 0.550000011920929
+[07/14/2025 14:44:19 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.10it/s] 50%|█████     | 40/80 [00:00<00:00, 196.88it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.15it/s]100%|██████████| 80/80 [00:00<00:00, 197.41it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:19 INFO]: Training loss at epoch 36: 0.5490004815161228
+[07/14/2025 14:44:19 INFO]: Training accuracy at epoch 36: 1.0375
+[07/14/2025 14:44:19 INFO]: Val accuracy at epoch 36: 0.8999999761581421
+[07/14/2025 14:44:19 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.43it/s] 50%|█████     | 40/80 [00:00<00:00, 197.29it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.58it/s]100%|██████████| 80/80 [00:00<00:00, 197.63it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:20 INFO]: Training loss at epoch 37: 0.5474376305937767
+[07/14/2025 14:44:20 INFO]: Training accuracy at epoch 37: 0.9625
+[07/14/2025 14:44:20 INFO]: Val accuracy at epoch 37: 0.8999999761581421
+[07/14/2025 14:44:20 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.20it/s] 50%|█████     | 40/80 [00:00<00:00, 196.80it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.24it/s]100%|██████████| 80/80 [00:00<00:00, 197.43it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:20 INFO]: Training loss at epoch 38: 0.5468247510492802
+[07/14/2025 14:44:20 INFO]: Training accuracy at epoch 38: 1.3625
+[07/14/2025 14:44:20 INFO]: Val accuracy at epoch 38: 0.949999988079071
+[07/14/2025 14:44:20 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.48it/s] 50%|█████     | 40/80 [00:00<00:00, 197.31it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.50it/s]100%|██████████| 80/80 [00:00<00:00, 197.71it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:21 INFO]: Training loss at epoch 39: 0.5468872621655464
+[07/14/2025 14:44:21 INFO]: Training accuracy at epoch 39: 1.2
+[07/14/2025 14:44:21 INFO]: Val accuracy at epoch 39: 0.8500000238418579
+  0%|          | 0/10 [00:00<?, ?it/s] 20%|██        | 2/10 [00:00<00:00, 17.35it/s] 40%|████      | 4/10 [00:00<00:00, 17.37it/s] 60%|██████    | 6/10 [00:00<00:00, 17.44it/s] 80%|████████  | 8/10 [00:00<00:00, 17.42it/s]100%|██████████| 10/10 [00:00<00:00, 17.48it/s]                                                 0%|          | 0/2 [00:00<?, ?it/s]                                       0%|          | 0/80 [00:00<?, ?it/s] 20%|██        | 16/80 [00:00<00:00, 151.71it/s] 40%|████      | 32/80 [00:00<00:00, 152.25it/s] 60%|██████    | 48/80 [00:00<00:00, 152.55it/s] 80%|████████  | 64/80 [00:00<00:00, 152.75it/s]100%|██████████| 80/80 [00:00<00:00, 152.86it/s]                                                [07/14/2025 14:44:22 INFO]: Training accuracy: {30: 0.7124999761581421, 31: 0.7124999761581421, 32: 0.7124999761581421, 33: 0.7124999761581421, 34: 0.7124999761581421, 35: 0.7124999761581421, 36: 0.7124999761581421, 37: 0.7124999761581421, 38: 0.7124999761581421, 39: 0.7124999761581421, 40: 0.7124999761581421}
+[07/14/2025 14:44:22 INFO]: Val accuracy: {30: 0.8500000238418579, 31: 0.8500000238418579, 32: 0.8500000238418579, 33: 0.8500000238418579, 34: 0.8500000238418579, 35: 0.8500000238418579, 36: 0.8500000238418579, 37: 0.8500000238418579, 38: 0.8500000238418579, 39: 0.8500000238418579, 40: 0.8500000238418579}
+[07/14/2025 14:44:22 INFO]: Test accuracy (hard data): {30: 0.0, 31: 0.0, 32: 0.0, 33: 0.0, 34: 0.0, 35: 0.0, 36: 0.0, 37: 0.0, 38: 0.0, 39: 0.0, 40: 0.0}
+[07/14/2025 14:44:22 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 194.87it/s] 50%|█████     | 40/80 [00:00<00:00, 195.70it/s] 75%|███████▌  | 60/80 [00:00<00:00, 196.49it/s]100%|██████████| 80/80 [00:00<00:00, 197.00it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:22 INFO]: Training loss at epoch 40: 0.5464452400803566
+[07/14/2025 14:44:22 INFO]: Training accuracy at epoch 40: 1.1875
+[07/14/2025 14:44:22 INFO]: Val accuracy at epoch 40: 1.2000000476837158
+[07/14/2025 14:44:22 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.22it/s] 50%|█████     | 40/80 [00:00<00:00, 196.81it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.28it/s]100%|██████████| 80/80 [00:00<00:00, 197.51it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:23 INFO]: Training loss at epoch 41: 0.5470369346439838
+[07/14/2025 14:44:23 INFO]: Training accuracy at epoch 41: 1.175
+[07/14/2025 14:44:23 INFO]: Val accuracy at epoch 41: 1.399999976158142
+[07/14/2025 14:44:23 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.44it/s] 50%|█████     | 40/80 [00:00<00:00, 196.94it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.22it/s]100%|██████████| 80/80 [00:00<00:00, 197.49it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:23 INFO]: Training loss at epoch 42: 0.5455546006560326
+[07/14/2025 14:44:23 INFO]: Training accuracy at epoch 42: 1.2875
+[07/14/2025 14:44:23 INFO]: Val accuracy at epoch 42: 1.5499999523162842
+[07/14/2025 14:44:23 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 195.97it/s] 50%|█████     | 40/80 [00:00<00:00, 196.72it/s] 75%|███████▌  | 60/80 [00:00<00:00, 196.99it/s]100%|██████████| 80/80 [00:00<00:00, 196.82it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:24 INFO]: Training loss at epoch 43: 0.5459830008447171
+[07/14/2025 14:44:24 INFO]: Training accuracy at epoch 43: 1.25
+[07/14/2025 14:44:24 INFO]: Val accuracy at epoch 43: 0.5
+[07/14/2025 14:44:24 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.29it/s] 50%|█████     | 40/80 [00:00<00:00, 197.10it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.37it/s]100%|██████████| 80/80 [00:00<00:00, 197.33it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:24 INFO]: Training loss at epoch 44: 0.5450526997447014
+[07/14/2025 14:44:24 INFO]: Training accuracy at epoch 44: 1.05
+[07/14/2025 14:44:24 INFO]: Val accuracy at epoch 44: 1.2999999523162842
+[07/14/2025 14:44:24 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.64it/s] 50%|█████     | 40/80 [00:00<00:00, 197.36it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.60it/s]100%|██████████| 80/80 [00:00<00:00, 197.81it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:25 INFO]: Training loss at epoch 45: 0.5463450513780117
+[07/14/2025 14:44:25 INFO]: Training accuracy at epoch 45: 1.2125
+[07/14/2025 14:44:25 INFO]: Val accuracy at epoch 45: 0.8500000238418579
+[07/14/2025 14:44:25 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.57it/s] 50%|█████     | 40/80 [00:00<00:00, 197.19it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.50it/s]100%|██████████| 80/80 [00:00<00:00, 197.60it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:25 INFO]: Training loss at epoch 46: 0.5449179500341416
+[07/14/2025 14:44:25 INFO]: Training accuracy at epoch 46: 1.375
+[07/14/2025 14:44:25 INFO]: Val accuracy at epoch 46: 1.350000023841858
+[07/14/2025 14:44:25 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 195.25it/s] 50%|█████     | 40/80 [00:00<00:00, 196.19it/s] 75%|███████▌  | 60/80 [00:00<00:00, 196.62it/s]100%|██████████| 80/80 [00:00<00:00, 196.88it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:25 INFO]: Training loss at epoch 47: 0.5470097042620182
+[07/14/2025 14:44:25 INFO]: Training accuracy at epoch 47: 1.175
+[07/14/2025 14:44:25 INFO]: Val accuracy at epoch 47: 0.6000000238418579
+[07/14/2025 14:44:25 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.22it/s] 50%|█████     | 40/80 [00:00<00:00, 196.81it/s] 75%|███████▌  | 60/80 [00:00<00:00, 196.25it/s]100%|██████████| 80/80 [00:00<00:00, 195.94it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:26 INFO]: Training loss at epoch 48: 0.5450082056224346
+[07/14/2025 14:44:26 INFO]: Training accuracy at epoch 48: 1.0375
+[07/14/2025 14:44:26 INFO]: Val accuracy at epoch 48: 0.800000011920929
+[07/14/2025 14:44:26 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 194.63it/s] 50%|█████     | 40/80 [00:00<00:00, 195.24it/s] 75%|███████▌  | 60/80 [00:00<00:00, 195.41it/s]100%|██████████| 80/80 [00:00<00:00, 195.54it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:26 INFO]: Training loss at epoch 49: 0.5443380780518055
+[07/14/2025 14:44:26 INFO]: Training accuracy at epoch 49: 0.9625
+[07/14/2025 14:44:26 INFO]: Val accuracy at epoch 49: 0.699999988079071
+[07/14/2025 14:44:26 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 194.93it/s] 50%|█████     | 40/80 [00:00<00:00, 195.54it/s] 75%|███████▌  | 60/80 [00:00<00:00, 195.83it/s]100%|██████████| 80/80 [00:00<00:00, 196.00it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:27 INFO]: Training loss at epoch 50: 0.5429331377148628
+[07/14/2025 14:44:27 INFO]: Training accuracy at epoch 50: 1.2125
+[07/14/2025 14:44:27 INFO]: Val accuracy at epoch 50: 1.2999999523162842
+[07/14/2025 14:44:27 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 195.11it/s] 50%|█████     | 40/80 [00:00<00:00, 195.50it/s] 75%|███████▌  | 60/80 [00:00<00:00, 195.79it/s]100%|██████████| 80/80 [00:00<00:00, 195.96it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:27 INFO]: Training loss at epoch 51: 0.5433153688907624
+[07/14/2025 14:44:27 INFO]: Training accuracy at epoch 51: 1.0875
+[07/14/2025 14:44:27 INFO]: Val accuracy at epoch 51: 1.5499999523162842
+[07/14/2025 14:44:27 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 194.54it/s] 50%|█████     | 40/80 [00:00<00:00, 195.63it/s] 75%|███████▌  | 60/80 [00:00<00:00, 195.97it/s]100%|██████████| 80/80 [00:00<00:00, 196.58it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:28 INFO]: Training loss at epoch 52: 0.5423542127013207
+[07/14/2025 14:44:28 INFO]: Training accuracy at epoch 52: 1.3625
+[07/14/2025 14:44:28 INFO]: Val accuracy at epoch 52: 0.6499999761581421
+[07/14/2025 14:44:28 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 194.42it/s] 50%|█████     | 40/80 [00:00<00:00, 195.27it/s] 75%|███████▌  | 60/80 [00:00<00:00, 195.71it/s]100%|██████████| 80/80 [00:00<00:00, 196.01it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:28 INFO]: Training loss at epoch 53: 0.5428992882370949
+[07/14/2025 14:44:28 INFO]: Training accuracy at epoch 53: 1.5375
+[07/14/2025 14:44:28 INFO]: Val accuracy at epoch 53: 1.2999999523162842
+[07/14/2025 14:44:28 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 195.44it/s] 50%|█████     | 40/80 [00:00<00:00, 195.83it/s] 75%|███████▌  | 60/80 [00:00<00:00, 195.92it/s]100%|██████████| 80/80 [00:00<00:00, 196.06it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:29 INFO]: Training loss at epoch 54: 0.5412334352731705
+[07/14/2025 14:44:29 INFO]: Training accuracy at epoch 54: 1.5
+[07/14/2025 14:44:29 INFO]: Val accuracy at epoch 54: 1.0
+[07/14/2025 14:44:29 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 195.24it/s] 50%|█████     | 40/80 [00:00<00:00, 195.74it/s] 75%|███████▌  | 60/80 [00:00<00:00, 195.84it/s]100%|██████████| 80/80 [00:00<00:00, 195.92it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:29 INFO]: Training loss at epoch 55: 0.5420232802629471
+[07/14/2025 14:44:29 INFO]: Training accuracy at epoch 55: 1.3
+[07/14/2025 14:44:29 INFO]: Val accuracy at epoch 55: 2.4000000953674316
+[07/14/2025 14:44:29 INFO]: Saving model to: model_best.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.28it/s] 50%|█████     | 40/80 [00:00<00:00, 196.83it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.01it/s]100%|██████████| 80/80 [00:00<00:00, 197.15it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:30 INFO]: Training loss at epoch 56: 0.5419227451086044
+[07/14/2025 14:44:30 INFO]: Training accuracy at epoch 56: 1.4375
+[07/14/2025 14:44:30 INFO]: Val accuracy at epoch 56: 1.100000023841858
+[07/14/2025 14:44:30 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.04it/s] 50%|█████     | 40/80 [00:00<00:00, 196.78it/s] 75%|███████▌  | 60/80 [00:00<00:00, 196.98it/s]100%|██████████| 80/80 [00:00<00:00, 197.16it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:30 INFO]: Training loss at epoch 57: 0.5412513576447964
+[07/14/2025 14:44:30 INFO]: Training accuracy at epoch 57: 1.35
+[07/14/2025 14:44:30 INFO]: Val accuracy at epoch 57: 1.5499999523162842
+[07/14/2025 14:44:30 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.16it/s] 50%|█████     | 40/80 [00:00<00:00, 196.65it/s] 75%|███████▌  | 60/80 [00:00<00:00, 196.89it/s]100%|██████████| 80/80 [00:00<00:00, 197.14it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:31 INFO]: Training loss at epoch 58: 0.5420385636389256
+[07/14/2025 14:44:31 INFO]: Training accuracy at epoch 58: 1.2125
+[07/14/2025 14:44:31 INFO]: Val accuracy at epoch 58: 1.5499999523162842
+[07/14/2025 14:44:31 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.45it/s] 50%|█████     | 40/80 [00:00<00:00, 196.71it/s] 75%|███████▌  | 60/80 [00:00<00:00, 196.49it/s]100%|██████████| 80/80 [00:00<00:00, 196.52it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:31 INFO]: Training loss at epoch 59: 0.5406630612909794
+[07/14/2025 14:44:31 INFO]: Training accuracy at epoch 59: 1.2875
+[07/14/2025 14:44:31 INFO]: Val accuracy at epoch 59: 1.899999976158142
+  0%|          | 0/10 [00:00<?, ?it/s] 20%|██        | 2/10 [00:00<00:00, 17.39it/s] 40%|████      | 4/10 [00:00<00:00, 17.47it/s] 60%|██████    | 6/10 [00:00<00:00, 17.51it/s] 80%|████████  | 8/10 [00:00<00:00, 17.52it/s]100%|██████████| 10/10 [00:00<00:00, 17.53it/s]                                                 0%|          | 0/2 [00:00<?, ?it/s]                                       0%|          | 0/80 [00:00<?, ?it/s] 20%|██        | 16/80 [00:00<00:00, 151.93it/s] 40%|████      | 32/80 [00:00<00:00, 152.32it/s] 60%|██████    | 48/80 [00:00<00:00, 152.44it/s] 80%|████████  | 64/80 [00:00<00:00, 152.55it/s]100%|██████████| 80/80 [00:00<00:00, 152.64it/s]                                                [07/14/2025 14:44:32 INFO]: Training accuracy: {30: 1.9375, 31: 1.9375, 32: 1.9375, 33: 1.9375, 34: 1.9375, 35: 1.9375, 36: 1.9375, 37: 1.9375, 38: 1.9375, 39: 1.9375, 40: 1.9375}
+[07/14/2025 14:44:32 INFO]: Val accuracy: {30: 1.899999976158142, 31: 1.899999976158142, 32: 1.899999976158142, 33: 1.899999976158142, 34: 1.899999976158142, 35: 1.899999976158142, 36: 1.899999976158142, 37: 1.899999976158142, 38: 1.899999976158142, 39: 1.899999976158142, 40: 1.899999976158142}
+[07/14/2025 14:44:32 INFO]: Test accuracy (hard data): {30: 0.0, 31: 0.0, 32: 0.0, 33: 0.0, 34: 0.0, 35: 0.0, 36: 0.0, 37: 0.0, 38: 0.0, 39: 0.0, 40: 0.0}
+[07/14/2025 14:44:32 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 193.95it/s] 50%|█████     | 40/80 [00:00<00:00, 194.21it/s] 75%|███████▌  | 60/80 [00:00<00:00, 194.90it/s]100%|██████████| 80/80 [00:00<00:00, 195.46it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:33 INFO]: Training loss at epoch 60: 0.5332430325448513
+[07/14/2025 14:44:33 INFO]: Training accuracy at epoch 60: 2.1625
+[07/14/2025 14:44:33 INFO]: Val accuracy at epoch 60: 2.049999952316284
+[07/14/2025 14:44:33 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 194.97it/s] 50%|█████     | 40/80 [00:00<00:00, 195.50it/s] 75%|███████▌  | 60/80 [00:00<00:00, 195.85it/s]100%|██████████| 80/80 [00:00<00:00, 195.99it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:33 INFO]: Training loss at epoch 61: 0.5308684192597866
+[07/14/2025 14:44:33 INFO]: Training accuracy at epoch 61: 2.4625
+[07/14/2025 14:44:33 INFO]: Val accuracy at epoch 61: 2.049999952316284
+[07/14/2025 14:44:33 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 194.69it/s] 50%|█████     | 40/80 [00:00<00:00, 195.56it/s] 75%|███████▌  | 60/80 [00:00<00:00, 195.85it/s]100%|██████████| 80/80 [00:00<00:00, 196.16it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:33 INFO]: Training loss at epoch 62: 0.5298743274062871
+[07/14/2025 14:44:33 INFO]: Training accuracy at epoch 62: 2.6375
+[07/14/2025 14:44:33 INFO]: Val accuracy at epoch 62: 1.9500000476837158
+[07/14/2025 14:44:33 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 194.99it/s] 50%|█████     | 40/80 [00:00<00:00, 195.75it/s] 75%|███████▌  | 60/80 [00:00<00:00, 195.97it/s]100%|██████████| 80/80 [00:00<00:00, 196.06it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:34 INFO]: Training loss at epoch 63: 0.529466712474823
+[07/14/2025 14:44:34 INFO]: Training accuracy at epoch 63: 2.5625
+[07/14/2025 14:44:34 INFO]: Val accuracy at epoch 63: 1.850000023841858
+[07/14/2025 14:44:34 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 195.01it/s] 50%|█████     | 40/80 [00:00<00:00, 195.61it/s] 75%|███████▌  | 60/80 [00:00<00:00, 195.86it/s]100%|██████████| 80/80 [00:00<00:00, 195.90it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:34 INFO]: Training loss at epoch 64: 0.5287935484200716
+[07/14/2025 14:44:34 INFO]: Training accuracy at epoch 64: 2.5375
+[07/14/2025 14:44:34 INFO]: Val accuracy at epoch 64: 2.25
+[07/14/2025 14:44:34 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 194.64it/s] 50%|█████     | 40/80 [00:00<00:00, 195.22it/s] 75%|███████▌  | 60/80 [00:00<00:00, 195.62it/s]100%|██████████| 80/80 [00:00<00:00, 195.88it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:35 INFO]: Training loss at epoch 65: 0.528290593624115
+[07/14/2025 14:44:35 INFO]: Training accuracy at epoch 65: 2.725
+[07/14/2025 14:44:35 INFO]: Val accuracy at epoch 65: 2.4000000953674316
+[07/14/2025 14:44:35 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 195.20it/s] 50%|█████     | 40/80 [00:00<00:00, 195.84it/s] 75%|███████▌  | 60/80 [00:00<00:00, 195.93it/s]100%|██████████| 80/80 [00:00<00:00, 196.03it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:35 INFO]: Training loss at epoch 66: 0.5275516401976347
+[07/14/2025 14:44:35 INFO]: Training accuracy at epoch 66: 2.75
+[07/14/2025 14:44:35 INFO]: Val accuracy at epoch 66: 2.0
+[07/14/2025 14:44:35 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 195.23it/s] 50%|█████     | 40/80 [00:00<00:00, 195.75it/s] 75%|███████▌  | 60/80 [00:00<00:00, 195.98it/s]100%|██████████| 80/80 [00:00<00:00, 196.02it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:36 INFO]: Training loss at epoch 67: 0.527660895138979
+[07/14/2025 14:44:36 INFO]: Training accuracy at epoch 67: 2.725
+[07/14/2025 14:44:36 INFO]: Val accuracy at epoch 67: 2.5999999046325684
+[07/14/2025 14:44:36 INFO]: Saving model to: model_best.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 195.43it/s] 50%|█████     | 40/80 [00:00<00:00, 191.28it/s] 75%|███████▌  | 60/80 [00:00<00:00, 193.07it/s]100%|██████████| 80/80 [00:00<00:00, 194.22it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:36 INFO]: Training loss at epoch 68: 0.5273694157600403
+[07/14/2025 14:44:36 INFO]: Training accuracy at epoch 68: 2.6625
+[07/14/2025 14:44:36 INFO]: Val accuracy at epoch 68: 1.9500000476837158
+[07/14/2025 14:44:36 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 195.02it/s] 50%|█████     | 40/80 [00:00<00:00, 195.40it/s] 75%|███████▌  | 60/80 [00:00<00:00, 195.65it/s]100%|██████████| 80/80 [00:00<00:00, 195.76it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:37 INFO]: Training loss at epoch 69: 0.5270132940262556
+[07/14/2025 14:44:37 INFO]: Training accuracy at epoch 69: 2.725
+[07/14/2025 14:44:37 INFO]: Val accuracy at epoch 69: 2.700000047683716
+[07/14/2025 14:44:37 INFO]: Saving model to: model_best.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 194.88it/s] 50%|█████     | 40/80 [00:00<00:00, 195.45it/s] 75%|███████▌  | 60/80 [00:00<00:00, 195.60it/s]100%|██████████| 80/80 [00:00<00:00, 195.89it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:37 INFO]: Training loss at epoch 70: 0.5261760167777538
+[07/14/2025 14:44:37 INFO]: Training accuracy at epoch 70: 2.725
+[07/14/2025 14:44:37 INFO]: Val accuracy at epoch 70: 2.450000047683716
+[07/14/2025 14:44:37 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 195.92it/s] 50%|█████     | 40/80 [00:00<00:00, 196.57it/s] 75%|███████▌  | 60/80 [00:00<00:00, 196.81it/s]100%|██████████| 80/80 [00:00<00:00, 196.94it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:38 INFO]: Training loss at epoch 71: 0.525787128508091
+[07/14/2025 14:44:38 INFO]: Training accuracy at epoch 71: 2.875
+[07/14/2025 14:44:38 INFO]: Val accuracy at epoch 71: 2.299999952316284
+[07/14/2025 14:44:38 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 195.17it/s] 50%|█████     | 40/80 [00:00<00:00, 196.13it/s] 75%|███████▌  | 60/80 [00:00<00:00, 196.61it/s]100%|██████████| 80/80 [00:00<00:00, 196.84it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:38 INFO]: Training loss at epoch 72: 0.5255946915596723
+[07/14/2025 14:44:38 INFO]: Training accuracy at epoch 72: 2.7625
+[07/14/2025 14:44:38 INFO]: Val accuracy at epoch 72: 2.4000000953674316
+[07/14/2025 14:44:38 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 195.86it/s] 50%|█████     | 40/80 [00:00<00:00, 196.65it/s] 75%|███████▌  | 60/80 [00:00<00:00, 196.89it/s]100%|██████████| 80/80 [00:00<00:00, 196.98it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:38 INFO]: Training loss at epoch 73: 0.5247724562883377
+[07/14/2025 14:44:38 INFO]: Training accuracy at epoch 73: 2.9
+[07/14/2025 14:44:38 INFO]: Val accuracy at epoch 73: 2.5999999046325684
+[07/14/2025 14:44:38 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.19it/s] 50%|█████     | 40/80 [00:00<00:00, 196.96it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.17it/s]100%|██████████| 80/80 [00:00<00:00, 197.32it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:39 INFO]: Training loss at epoch 74: 0.5245820090174675
+[07/14/2025 14:44:39 INFO]: Training accuracy at epoch 74: 2.95
+[07/14/2025 14:44:39 INFO]: Val accuracy at epoch 74: 2.25
+[07/14/2025 14:44:39 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.50it/s] 50%|█████     | 40/80 [00:00<00:00, 197.02it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.03it/s]100%|██████████| 80/80 [00:00<00:00, 197.44it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:39 INFO]: Training loss at epoch 75: 0.5240712713450193
+[07/14/2025 14:44:39 INFO]: Training accuracy at epoch 75: 2.95
+[07/14/2025 14:44:39 INFO]: Val accuracy at epoch 75: 2.049999952316284
+[07/14/2025 14:44:39 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 195.85it/s] 50%|█████     | 40/80 [00:00<00:00, 197.12it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.55it/s]100%|██████████| 80/80 [00:00<00:00, 197.78it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:40 INFO]: Training loss at epoch 76: 0.5237594015896321
+[07/14/2025 14:44:40 INFO]: Training accuracy at epoch 76: 3.225
+[07/14/2025 14:44:40 INFO]: Val accuracy at epoch 76: 2.3499999046325684
+[07/14/2025 14:44:40 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.60it/s] 50%|█████     | 40/80 [00:00<00:00, 197.55it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.80it/s]100%|██████████| 80/80 [00:00<00:00, 197.98it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:40 INFO]: Training loss at epoch 77: 0.5232488326728344
+[07/14/2025 14:44:40 INFO]: Training accuracy at epoch 77: 3.0875
+[07/14/2025 14:44:40 INFO]: Val accuracy at epoch 77: 2.450000047683716
+[07/14/2025 14:44:40 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.87it/s] 50%|█████     | 40/80 [00:00<00:00, 197.45it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.66it/s]100%|██████████| 80/80 [00:00<00:00, 197.85it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:41 INFO]: Training loss at epoch 78: 0.5225418642163276
+[07/14/2025 14:44:41 INFO]: Training accuracy at epoch 78: 3.2125
+[07/14/2025 14:44:41 INFO]: Val accuracy at epoch 78: 2.700000047683716
+[07/14/2025 14:44:41 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 195.60it/s] 50%|█████     | 40/80 [00:00<00:00, 196.69it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.16it/s]100%|██████████| 80/80 [00:00<00:00, 197.56it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:41 INFO]: Training loss at epoch 79: 0.5219271998852492
+[07/14/2025 14:44:41 INFO]: Training accuracy at epoch 79: 3.1
+[07/14/2025 14:44:41 INFO]: Val accuracy at epoch 79: 2.299999952316284
+  0%|          | 0/10 [00:00<?, ?it/s] 20%|██        | 2/10 [00:00<00:00, 17.40it/s] 40%|████      | 4/10 [00:00<00:00, 17.48it/s] 60%|██████    | 6/10 [00:00<00:00, 17.51it/s] 80%|████████  | 8/10 [00:00<00:00, 17.53it/s]100%|██████████| 10/10 [00:00<00:00, 17.54it/s]                                                 0%|          | 0/2 [00:00<?, ?it/s]                                       0%|          | 0/80 [00:00<?, ?it/s] 20%|██        | 16/80 [00:00<00:00, 152.28it/s] 40%|████      | 32/80 [00:00<00:00, 152.31it/s] 60%|██████    | 48/80 [00:00<00:00, 152.42it/s] 80%|████████  | 64/80 [00:00<00:00, 152.57it/s]100%|██████████| 80/80 [00:00<00:00, 152.60it/s]                                                [07/14/2025 14:44:42 INFO]: Training accuracy: {30: 3.3499999046325684, 31: 3.3499999046325684, 32: 3.3499999046325684, 33: 3.3499999046325684, 34: 3.3499999046325684, 35: 3.3499999046325684, 36: 3.3499999046325684, 37: 3.3499999046325684, 38: 3.3499999046325684, 39: 3.3499999046325684, 40: 3.3499999046325684}
+[07/14/2025 14:44:42 INFO]: Val accuracy: {30: 2.299999952316284, 31: 2.299999952316284, 32: 2.299999952316284, 33: 2.299999952316284, 34: 2.299999952316284, 35: 2.299999952316284, 36: 2.299999952316284, 37: 2.299999952316284, 38: 2.299999952316284, 39: 2.299999952316284, 40: 2.299999952316284}
+[07/14/2025 14:44:42 INFO]: Test accuracy (hard data): {30: 0.0, 31: 0.0, 32: 0.0, 33: 0.0, 34: 0.0, 35: 0.0, 36: 0.0, 37: 0.0, 38: 0.0, 39: 0.0, 40: 0.0}
+[07/14/2025 14:44:42 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 195.66it/s] 50%|█████     | 40/80 [00:00<00:00, 196.73it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.08it/s]100%|██████████| 80/80 [00:00<00:00, 196.99it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:43 INFO]: Training loss at epoch 80: 0.5220665518194437
+[07/14/2025 14:44:43 INFO]: Training accuracy at epoch 80: 2.9875
+[07/14/2025 14:44:43 INFO]: Val accuracy at epoch 80: 1.7999999523162842
+[07/14/2025 14:44:43 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.64it/s] 50%|█████     | 40/80 [00:00<00:00, 197.07it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.41it/s]100%|██████████| 80/80 [00:00<00:00, 196.89it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:43 INFO]: Training loss at epoch 81: 0.5219687551259995
+[07/14/2025 14:44:43 INFO]: Training accuracy at epoch 81: 3.1125
+[07/14/2025 14:44:43 INFO]: Val accuracy at epoch 81: 2.3499999046325684
+[07/14/2025 14:44:43 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.07it/s] 50%|█████     | 40/80 [00:00<00:00, 196.68it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.08it/s]100%|██████████| 80/80 [00:00<00:00, 197.37it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:44 INFO]: Training loss at epoch 82: 0.5213475778698922
+[07/14/2025 14:44:44 INFO]: Training accuracy at epoch 82: 3.0375
+[07/14/2025 14:44:44 INFO]: Val accuracy at epoch 82: 2.6500000953674316
+[07/14/2025 14:44:44 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.64it/s] 50%|█████     | 40/80 [00:00<00:00, 197.18it/s] 75%|███████▌  | 60/80 [00:00<00:00, 196.89it/s]100%|██████████| 80/80 [00:00<00:00, 197.12it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:44 INFO]: Training loss at epoch 83: 0.520831623673439
+[07/14/2025 14:44:44 INFO]: Training accuracy at epoch 83: 3.0875
+[07/14/2025 14:44:44 INFO]: Val accuracy at epoch 83: 2.9000000953674316
+[07/14/2025 14:44:44 INFO]: Saving model to: model_best.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.42it/s] 50%|█████     | 40/80 [00:00<00:00, 197.29it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.37it/s]100%|██████████| 80/80 [00:00<00:00, 197.45it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:45 INFO]: Training loss at epoch 84: 0.5201798617839813
+[07/14/2025 14:44:45 INFO]: Training accuracy at epoch 84: 3.2375
+[07/14/2025 14:44:45 INFO]: Val accuracy at epoch 84: 2.200000047683716
+[07/14/2025 14:44:45 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.12it/s] 50%|█████     | 40/80 [00:00<00:00, 197.04it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.27it/s]100%|██████████| 80/80 [00:00<00:00, 197.01it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:45 INFO]: Training loss at epoch 85: 0.5197414971888066
+[07/14/2025 14:44:45 INFO]: Training accuracy at epoch 85: 3.2125
+[07/14/2025 14:44:45 INFO]: Val accuracy at epoch 85: 2.5999999046325684
+[07/14/2025 14:44:45 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.34it/s] 50%|█████     | 40/80 [00:00<00:00, 197.19it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.38it/s]100%|██████████| 80/80 [00:00<00:00, 197.48it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:46 INFO]: Training loss at epoch 86: 0.5191351518034935
+[07/14/2025 14:44:46 INFO]: Training accuracy at epoch 86: 3.2375
+[07/14/2025 14:44:46 INFO]: Val accuracy at epoch 86: 2.549999952316284
+[07/14/2025 14:44:46 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.49it/s] 50%|█████     | 40/80 [00:00<00:00, 197.05it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.20it/s]100%|██████████| 80/80 [00:00<00:00, 197.40it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:46 INFO]: Training loss at epoch 87: 0.5190032996237278
+[07/14/2025 14:44:46 INFO]: Training accuracy at epoch 87: 3.25
+[07/14/2025 14:44:46 INFO]: Val accuracy at epoch 87: 2.6500000953674316
+[07/14/2025 14:44:46 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 195.19it/s] 50%|█████     | 40/80 [00:00<00:00, 195.97it/s] 75%|███████▌  | 60/80 [00:00<00:00, 195.99it/s]100%|██████████| 80/80 [00:00<00:00, 196.34it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:46 INFO]: Training loss at epoch 88: 0.5178461402654648
+[07/14/2025 14:44:46 INFO]: Training accuracy at epoch 88: 3.4375
+[07/14/2025 14:44:46 INFO]: Val accuracy at epoch 88: 2.5
+[07/14/2025 14:44:46 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 195.31it/s] 50%|█████     | 40/80 [00:00<00:00, 196.08it/s] 75%|███████▌  | 60/80 [00:00<00:00, 196.44it/s]100%|██████████| 80/80 [00:00<00:00, 196.66it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:47 INFO]: Training loss at epoch 89: 0.5180348370224237
+[07/14/2025 14:44:47 INFO]: Training accuracy at epoch 89: 3.3375
+[07/14/2025 14:44:47 INFO]: Val accuracy at epoch 89: 1.9500000476837158
+[07/14/2025 14:44:47 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 195.45it/s] 50%|█████     | 40/80 [00:00<00:00, 196.20it/s] 75%|███████▌  | 60/80 [00:00<00:00, 196.54it/s]100%|██████████| 80/80 [00:00<00:00, 196.73it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:47 INFO]: Training loss at epoch 90: 0.5167967554181814
+[07/14/2025 14:44:47 INFO]: Training accuracy at epoch 90: 3.25
+[07/14/2025 14:44:47 INFO]: Val accuracy at epoch 90: 3.0
+[07/14/2025 14:44:47 INFO]: Saving model to: model_best.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 195.62it/s] 50%|█████     | 40/80 [00:00<00:00, 196.11it/s] 75%|███████▌  | 60/80 [00:00<00:00, 196.42it/s]100%|██████████| 80/80 [00:00<00:00, 196.41it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:48 INFO]: Training loss at epoch 91: 0.5165502745658159
+[07/14/2025 14:44:48 INFO]: Training accuracy at epoch 91: 3.175
+[07/14/2025 14:44:48 INFO]: Val accuracy at epoch 91: 2.3499999046325684
+[07/14/2025 14:44:48 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.50it/s] 50%|█████     | 40/80 [00:00<00:00, 197.14it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.40it/s]100%|██████████| 80/80 [00:00<00:00, 197.56it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:48 INFO]: Training loss at epoch 92: 0.5155762597918511
+[07/14/2025 14:44:48 INFO]: Training accuracy at epoch 92: 3.225
+[07/14/2025 14:44:48 INFO]: Val accuracy at epoch 92: 2.6500000953674316
+[07/14/2025 14:44:48 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.42it/s] 50%|█████     | 40/80 [00:00<00:00, 197.26it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.55it/s]100%|██████████| 80/80 [00:00<00:00, 197.14it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:49 INFO]: Training loss at epoch 93: 0.5158515118062497
+[07/14/2025 14:44:49 INFO]: Training accuracy at epoch 93: 3.35
+[07/14/2025 14:44:49 INFO]: Val accuracy at epoch 93: 2.3499999046325684
+[07/14/2025 14:44:49 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.49it/s] 50%|█████     | 40/80 [00:00<00:00, 197.13it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.17it/s]100%|██████████| 80/80 [00:00<00:00, 197.24it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:49 INFO]: Training loss at epoch 94: 0.5157895781099796
+[07/14/2025 14:44:49 INFO]: Training accuracy at epoch 94: 3.4625
+[07/14/2025 14:44:49 INFO]: Val accuracy at epoch 94: 2.1500000953674316
+[07/14/2025 14:44:49 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.19it/s] 50%|█████     | 40/80 [00:00<00:00, 196.96it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.25it/s]100%|██████████| 80/80 [00:00<00:00, 197.49it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:50 INFO]: Training loss at epoch 95: 0.5142300207167864
+[07/14/2025 14:44:50 INFO]: Training accuracy at epoch 95: 3.2875
+[07/14/2025 14:44:50 INFO]: Val accuracy at epoch 95: 2.75
+[07/14/2025 14:44:50 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.28it/s] 50%|█████     | 40/80 [00:00<00:00, 196.93it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.12it/s]100%|██████████| 80/80 [00:00<00:00, 196.42it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:50 INFO]: Training loss at epoch 96: 0.5142084646970033
+[07/14/2025 14:44:50 INFO]: Training accuracy at epoch 96: 3.4375
+[07/14/2025 14:44:50 INFO]: Val accuracy at epoch 96: 2.700000047683716
+[07/14/2025 14:44:50 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 193.66it/s] 50%|█████     | 40/80 [00:00<00:00, 194.27it/s] 75%|███████▌  | 60/80 [00:00<00:00, 194.65it/s]100%|██████████| 80/80 [00:00<00:00, 194.80it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:51 INFO]: Training loss at epoch 97: 0.5129677079617977
+[07/14/2025 14:44:51 INFO]: Training accuracy at epoch 97: 3.65
+[07/14/2025 14:44:51 INFO]: Val accuracy at epoch 97: 2.25
+[07/14/2025 14:44:51 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 193.12it/s] 50%|█████     | 40/80 [00:00<00:00, 194.02it/s] 75%|███████▌  | 60/80 [00:00<00:00, 194.40it/s]100%|██████████| 80/80 [00:00<00:00, 193.58it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:51 INFO]: Training loss at epoch 98: 0.5121915098279715
+[07/14/2025 14:44:51 INFO]: Training accuracy at epoch 98: 3.4625
+[07/14/2025 14:44:51 INFO]: Val accuracy at epoch 98: 2.9000000953674316
+[07/14/2025 14:44:51 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 193.59it/s] 50%|█████     | 40/80 [00:00<00:00, 194.30it/s] 75%|███████▌  | 60/80 [00:00<00:00, 194.51it/s]100%|██████████| 80/80 [00:00<00:00, 194.73it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:51 INFO]: Training loss at epoch 99: 0.512670548632741
+[07/14/2025 14:44:51 INFO]: Training accuracy at epoch 99: 3.4125
+[07/14/2025 14:44:51 INFO]: Val accuracy at epoch 99: 2.200000047683716
+  0%|          | 0/10 [00:00<?, ?it/s] 20%|██        | 2/10 [00:00<00:00, 17.25it/s] 40%|████      | 4/10 [00:00<00:00, 17.39it/s] 60%|██████    | 6/10 [00:00<00:00, 13.89it/s] 80%|████████  | 8/10 [00:00<00:00, 15.10it/s]100%|██████████| 10/10 [00:00<00:00, 15.88it/s]                                                 0%|          | 0/2 [00:00<?, ?it/s]                                       0%|          | 0/80 [00:00<?, ?it/s] 20%|██        | 16/80 [00:00<00:00, 151.19it/s] 40%|████      | 32/80 [00:00<00:00, 151.49it/s] 60%|██████    | 48/80 [00:00<00:00, 151.71it/s] 80%|████████  | 64/80 [00:00<00:00, 151.93it/s]100%|██████████| 80/80 [00:00<00:00, 151.76it/s]                                                [07/14/2025 14:44:53 INFO]: Training accuracy: {30: 3.8375000953674316, 31: 3.8375000953674316, 32: 3.8375000953674316, 33: 3.8375000953674316, 34: 3.8375000953674316, 35: 3.8375000953674316, 36: 3.8375000953674316, 37: 3.8375000953674316, 38: 3.8375000953674316, 39: 3.8375000953674316, 40: 3.8375000953674316}
+[07/14/2025 14:44:53 INFO]: Val accuracy: {30: 2.200000047683716, 31: 2.200000047683716, 32: 2.200000047683716, 33: 2.200000047683716, 34: 2.200000047683716, 35: 2.200000047683716, 36: 2.200000047683716, 37: 2.200000047683716, 38: 2.200000047683716, 39: 2.200000047683716, 40: 2.200000047683716}
+[07/14/2025 14:44:53 INFO]: Test accuracy (hard data): {30: 0.0, 31: 0.0, 32: 0.0, 33: 0.0, 34: 0.0, 35: 0.0, 36: 0.0, 37: 0.0, 38: 0.0, 39: 0.0, 40: 0.0}
+[07/14/2025 14:44:53 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 193.14it/s] 50%|█████     | 40/80 [00:00<00:00, 194.11it/s] 75%|███████▌  | 60/80 [00:00<00:00, 194.38it/s]100%|██████████| 80/80 [00:00<00:00, 194.61it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:53 INFO]: Training loss at epoch 100: 0.5067605026066303
+[07/14/2025 14:44:53 INFO]: Training accuracy at epoch 100: 4.125
+[07/14/2025 14:44:53 INFO]: Val accuracy at epoch 100: 2.75
+[07/14/2025 14:44:53 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.83it/s] 50%|█████     | 40/80 [00:00<00:00, 196.98it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.22it/s]100%|██████████| 80/80 [00:00<00:00, 197.23it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:54 INFO]: Training loss at epoch 101: 0.505094726011157
+[07/14/2025 14:44:54 INFO]: Training accuracy at epoch 101: 4.275
+[07/14/2025 14:44:54 INFO]: Val accuracy at epoch 101: 2.5
+[07/14/2025 14:44:54 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 195.85it/s] 50%|█████     | 40/80 [00:00<00:00, 196.42it/s] 75%|███████▌  | 60/80 [00:00<00:00, 196.87it/s]100%|██████████| 80/80 [00:00<00:00, 197.20it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:54 INFO]: Training loss at epoch 102: 0.5047258418053389
+[07/14/2025 14:44:54 INFO]: Training accuracy at epoch 102: 4.3875
+[07/14/2025 14:44:54 INFO]: Val accuracy at epoch 102: 2.549999952316284
+[07/14/2025 14:44:54 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 195.72it/s] 50%|█████     | 40/80 [00:00<00:00, 196.86it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.03it/s]100%|██████████| 80/80 [00:00<00:00, 197.39it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:54 INFO]: Training loss at epoch 103: 0.5042276721447706
+[07/14/2025 14:44:54 INFO]: Training accuracy at epoch 103: 4.4
+[07/14/2025 14:44:54 INFO]: Val accuracy at epoch 103: 2.549999952316284
+[07/14/2025 14:44:54 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.13it/s] 50%|█████     | 40/80 [00:00<00:00, 197.18it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.26it/s]100%|██████████| 80/80 [00:00<00:00, 197.37it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:55 INFO]: Training loss at epoch 104: 0.5039425648748874
+[07/14/2025 14:44:55 INFO]: Training accuracy at epoch 104: 4.5875
+[07/14/2025 14:44:55 INFO]: Val accuracy at epoch 104: 2.6500000953674316
+[07/14/2025 14:44:55 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.26it/s] 50%|█████     | 40/80 [00:00<00:00, 197.08it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.28it/s]100%|██████████| 80/80 [00:00<00:00, 194.27it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:55 INFO]: Training loss at epoch 105: 0.5036245003342629
+[07/14/2025 14:44:55 INFO]: Training accuracy at epoch 105: 4.475
+[07/14/2025 14:44:55 INFO]: Val accuracy at epoch 105: 2.5999999046325684
+[07/14/2025 14:44:55 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.22it/s] 50%|█████     | 40/80 [00:00<00:00, 196.90it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.04it/s]100%|██████████| 80/80 [00:00<00:00, 197.01it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:56 INFO]: Training loss at epoch 106: 0.50338319465518
+[07/14/2025 14:44:56 INFO]: Training accuracy at epoch 106: 4.4125
+[07/14/2025 14:44:56 INFO]: Val accuracy at epoch 106: 2.75
+[07/14/2025 14:44:56 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.10it/s] 50%|█████     | 40/80 [00:00<00:00, 196.78it/s] 75%|███████▌  | 60/80 [00:00<00:00, 196.96it/s]100%|██████████| 80/80 [00:00<00:00, 197.04it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:56 INFO]: Training loss at epoch 107: 0.503149165585637
+[07/14/2025 14:44:56 INFO]: Training accuracy at epoch 107: 4.45
+[07/14/2025 14:44:56 INFO]: Val accuracy at epoch 107: 2.549999952316284
+[07/14/2025 14:44:56 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.38it/s] 50%|█████     | 40/80 [00:00<00:00, 197.23it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.36it/s]100%|██████████| 80/80 [00:00<00:00, 197.57it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:57 INFO]: Training loss at epoch 108: 0.5028494477272034
+[07/14/2025 14:44:57 INFO]: Training accuracy at epoch 108: 4.5625
+[07/14/2025 14:44:57 INFO]: Val accuracy at epoch 108: 2.450000047683716
+[07/14/2025 14:44:57 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.18it/s] 50%|█████     | 40/80 [00:00<00:00, 197.02it/s] 75%|███████▌  | 60/80 [00:00<00:00, 196.26it/s]100%|██████████| 80/80 [00:00<00:00, 195.73it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:57 INFO]: Training loss at epoch 109: 0.5027564849704504
+[07/14/2025 14:44:57 INFO]: Training accuracy at epoch 109: 4.3875
+[07/14/2025 14:44:57 INFO]: Val accuracy at epoch 109: 2.5
+[07/14/2025 14:44:57 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 193.83it/s] 50%|█████     | 40/80 [00:00<00:00, 194.54it/s] 75%|███████▌  | 60/80 [00:00<00:00, 194.84it/s]100%|██████████| 80/80 [00:00<00:00, 194.69it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:58 INFO]: Training loss at epoch 110: 0.5024391066282987
+[07/14/2025 14:44:58 INFO]: Training accuracy at epoch 110: 4.425
+[07/14/2025 14:44:58 INFO]: Val accuracy at epoch 110: 2.549999952316284
+[07/14/2025 14:44:58 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 194.06it/s] 50%|█████     | 40/80 [00:00<00:00, 194.81it/s] 75%|███████▌  | 60/80 [00:00<00:00, 195.06it/s]100%|██████████| 80/80 [00:00<00:00, 195.03it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:58 INFO]: Training loss at epoch 111: 0.5021584048867226
+[07/14/2025 14:44:58 INFO]: Training accuracy at epoch 111: 4.5375
+[07/14/2025 14:44:58 INFO]: Val accuracy at epoch 111: 2.5999999046325684
+[07/14/2025 14:44:58 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 193.95it/s] 50%|█████     | 40/80 [00:00<00:00, 194.45it/s] 75%|███████▌  | 60/80 [00:00<00:00, 194.74it/s]100%|██████████| 80/80 [00:00<00:00, 194.92it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:59 INFO]: Training loss at epoch 112: 0.5020411226898431
+[07/14/2025 14:44:59 INFO]: Training accuracy at epoch 112: 4.4625
+[07/14/2025 14:44:59 INFO]: Val accuracy at epoch 112: 2.5
+[07/14/2025 14:44:59 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 193.84it/s] 50%|█████     | 40/80 [00:00<00:00, 194.50it/s] 75%|███████▌  | 60/80 [00:00<00:00, 194.79it/s]100%|██████████| 80/80 [00:00<00:00, 194.81it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:59 INFO]: Training loss at epoch 113: 0.501729042455554
+[07/14/2025 14:44:59 INFO]: Training accuracy at epoch 113: 4.5375
+[07/14/2025 14:44:59 INFO]: Val accuracy at epoch 113: 2.5
+[07/14/2025 14:44:59 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 193.95it/s] 50%|█████     | 40/80 [00:00<00:00, 194.62it/s] 75%|███████▌  | 60/80 [00:00<00:00, 194.85it/s]100%|██████████| 80/80 [00:00<00:00, 194.98it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:44:59 INFO]: Training loss at epoch 114: 0.5015174109488726
+[07/14/2025 14:44:59 INFO]: Training accuracy at epoch 114: 4.4875
+[07/14/2025 14:44:59 INFO]: Val accuracy at epoch 114: 2.6500000953674316
+[07/14/2025 14:44:59 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 193.45it/s] 50%|█████     | 40/80 [00:00<00:00, 194.32it/s] 75%|███████▌  | 60/80 [00:00<00:00, 194.15it/s]100%|██████████| 80/80 [00:00<00:00, 194.50it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:45:00 INFO]: Training loss at epoch 115: 0.5013380512595177
+[07/14/2025 14:45:00 INFO]: Training accuracy at epoch 115: 4.525
+[07/14/2025 14:45:00 INFO]: Val accuracy at epoch 115: 2.549999952316284
+[07/14/2025 14:45:00 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 193.42it/s] 50%|█████     | 40/80 [00:00<00:00, 194.15it/s] 75%|███████▌  | 60/80 [00:00<00:00, 194.36it/s]100%|██████████| 80/80 [00:00<00:00, 194.61it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:45:00 INFO]: Training loss at epoch 116: 0.5011022947728634
+[07/14/2025 14:45:00 INFO]: Training accuracy at epoch 116: 4.4375
+[07/14/2025 14:45:00 INFO]: Val accuracy at epoch 116: 2.549999952316284
+[07/14/2025 14:45:00 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 193.72it/s] 50%|█████     | 40/80 [00:00<00:00, 193.97it/s] 75%|███████▌  | 60/80 [00:00<00:00, 194.40it/s]100%|██████████| 80/80 [00:00<00:00, 194.86it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:45:01 INFO]: Training loss at epoch 117: 0.50091203302145
+[07/14/2025 14:45:01 INFO]: Training accuracy at epoch 117: 4.4375
+[07/14/2025 14:45:01 INFO]: Val accuracy at epoch 117: 2.5
+[07/14/2025 14:45:01 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 194.18it/s] 50%|█████     | 40/80 [00:00<00:00, 194.59it/s] 75%|███████▌  | 60/80 [00:00<00:00, 195.87it/s]100%|██████████| 80/80 [00:00<00:00, 196.59it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:45:01 INFO]: Training loss at epoch 118: 0.5009946543723345
+[07/14/2025 14:45:01 INFO]: Training accuracy at epoch 118: 4.55
+[07/14/2025 14:45:01 INFO]: Val accuracy at epoch 118: 2.5
+[07/14/2025 14:45:01 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.30it/s] 50%|█████     | 40/80 [00:00<00:00, 197.01it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.24it/s]100%|██████████| 80/80 [00:00<00:00, 197.40it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:45:02 INFO]: Training loss at epoch 119: 0.5005263835191727
+[07/14/2025 14:45:02 INFO]: Training accuracy at epoch 119: 4.5375
+[07/14/2025 14:45:02 INFO]: Val accuracy at epoch 119: 2.5999999046325684
+  0%|          | 0/10 [00:00<?, ?it/s] 20%|██        | 2/10 [00:00<00:00, 17.48it/s] 40%|████      | 4/10 [00:00<00:00, 17.49it/s] 60%|██████    | 6/10 [00:00<00:00, 17.50it/s] 80%|████████  | 8/10 [00:00<00:00, 14.03it/s]100%|██████████| 10/10 [00:00<00:00, 15.10it/s]                                                 0%|          | 0/2 [00:00<?, ?it/s]                                       0%|          | 0/80 [00:00<?, ?it/s] 20%|██        | 16/80 [00:00<00:00, 151.94it/s] 40%|████      | 32/80 [00:00<00:00, 152.00it/s] 60%|██████    | 48/80 [00:00<00:00, 152.18it/s] 80%|████████  | 64/80 [00:00<00:00, 152.25it/s]100%|██████████| 80/80 [00:00<00:00, 152.35it/s]                                                [07/14/2025 14:45:03 INFO]: Training accuracy: {30: 4.612500190734863, 31: 4.612500190734863, 32: 4.612500190734863, 33: 4.612500190734863, 34: 4.612500190734863, 35: 4.612500190734863, 36: 4.612500190734863, 37: 4.612500190734863, 38: 4.612500190734863, 39: 4.612500190734863, 40: 4.612500190734863}
+[07/14/2025 14:45:03 INFO]: Val accuracy: {30: 2.5999999046325684, 31: 2.5999999046325684, 32: 2.5999999046325684, 33: 2.5999999046325684, 34: 2.5999999046325684, 35: 2.5999999046325684, 36: 2.5999999046325684, 37: 2.5999999046325684, 38: 2.5999999046325684, 39: 2.5999999046325684, 40: 2.5999999046325684}
+[07/14/2025 14:45:03 INFO]: Test accuracy (hard data): {30: 0.0, 31: 0.0, 32: 0.0, 33: 0.0, 34: 0.0, 35: 0.0, 36: 0.0, 37: 0.0, 38: 0.0, 39: 0.0, 40: 0.0}
+[07/14/2025 14:45:03 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 194.54it/s] 50%|█████     | 40/80 [00:00<00:00, 196.09it/s] 75%|███████▌  | 60/80 [00:00<00:00, 196.74it/s]100%|██████████| 80/80 [00:00<00:00, 197.04it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:45:03 INFO]: Training loss at epoch 120: 0.500395181030035
+[07/14/2025 14:45:03 INFO]: Training accuracy at epoch 120: 4.5125
+[07/14/2025 14:45:03 INFO]: Val accuracy at epoch 120: 2.5
+[07/14/2025 14:45:03 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 195.86it/s] 50%|█████     | 40/80 [00:00<00:00, 195.83it/s] 75%|███████▌  | 60/80 [00:00<00:00, 196.25it/s]100%|██████████| 80/80 [00:00<00:00, 196.39it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:45:04 INFO]: Training loss at epoch 121: 0.5001134656369686
+[07/14/2025 14:45:04 INFO]: Training accuracy at epoch 121: 4.4625
+[07/14/2025 14:45:04 INFO]: Val accuracy at epoch 121: 2.549999952316284
+[07/14/2025 14:45:04 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 195.39it/s] 50%|█████     | 40/80 [00:00<00:00, 195.85it/s] 75%|███████▌  | 60/80 [00:00<00:00, 196.43it/s]100%|██████████| 80/80 [00:00<00:00, 196.63it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:45:04 INFO]: Training loss at epoch 122: 0.49994670003652575
+[07/14/2025 14:45:04 INFO]: Training accuracy at epoch 122: 4.6125
+[07/14/2025 14:45:04 INFO]: Val accuracy at epoch 122: 2.450000047683716
+[07/14/2025 14:45:04 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 195.70it/s] 50%|█████     | 40/80 [00:00<00:00, 196.54it/s] 75%|███████▌  | 60/80 [00:00<00:00, 196.70it/s]100%|██████████| 80/80 [00:00<00:00, 197.07it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:45:05 INFO]: Training loss at epoch 123: 0.4997134622186422
+[07/14/2025 14:45:05 INFO]: Training accuracy at epoch 123: 4.6375
+[07/14/2025 14:45:05 INFO]: Val accuracy at epoch 123: 2.450000047683716
+[07/14/2025 14:45:05 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 195.78it/s] 50%|█████     | 40/80 [00:00<00:00, 196.78it/s] 75%|███████▌  | 60/80 [00:00<00:00, 196.70it/s]100%|██████████| 80/80 [00:00<00:00, 196.62it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:45:05 INFO]: Training loss at epoch 124: 0.49950385354459287
+[07/14/2025 14:45:05 INFO]: Training accuracy at epoch 124: 4.5125
+[07/14/2025 14:45:05 INFO]: Val accuracy at epoch 124: 2.5
+[07/14/2025 14:45:05 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 194.93it/s] 50%|█████     | 40/80 [00:00<00:00, 196.51it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.02it/s]100%|██████████| 80/80 [00:00<00:00, 197.35it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:45:06 INFO]: Training loss at epoch 125: 0.4993071272969246
+[07/14/2025 14:45:06 INFO]: Training accuracy at epoch 125: 4.6375
+[07/14/2025 14:45:06 INFO]: Val accuracy at epoch 125: 2.5
+[07/14/2025 14:45:06 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.16it/s] 50%|█████     | 40/80 [00:00<00:00, 196.85it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.00it/s]100%|██████████| 80/80 [00:00<00:00, 196.89it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:45:06 INFO]: Training loss at epoch 126: 0.4991498451679945
+[07/14/2025 14:45:06 INFO]: Training accuracy at epoch 126: 4.5125
+[07/14/2025 14:45:06 INFO]: Val accuracy at epoch 126: 2.5
+[07/14/2025 14:45:06 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 195.33it/s] 50%|█████     | 40/80 [00:00<00:00, 196.31it/s] 75%|███████▌  | 60/80 [00:00<00:00, 196.83it/s]100%|██████████| 80/80 [00:00<00:00, 196.98it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:45:07 INFO]: Training loss at epoch 127: 0.4989941228181124
+[07/14/2025 14:45:07 INFO]: Training accuracy at epoch 127: 4.725
+[07/14/2025 14:45:07 INFO]: Val accuracy at epoch 127: 2.5999999046325684
+[07/14/2025 14:45:07 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.24it/s] 50%|█████     | 40/80 [00:00<00:00, 196.92it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.31it/s]100%|██████████| 80/80 [00:00<00:00, 197.39it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:45:07 INFO]: Training loss at epoch 128: 0.4988190602511168
+[07/14/2025 14:45:07 INFO]: Training accuracy at epoch 128: 4.575
+[07/14/2025 14:45:07 INFO]: Val accuracy at epoch 128: 2.450000047683716
+[07/14/2025 14:45:07 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 195.92it/s] 50%|█████     | 40/80 [00:00<00:00, 196.97it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.30it/s]100%|██████████| 80/80 [00:00<00:00, 197.49it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:45:07 INFO]: Training loss at epoch 129: 0.49848482497036456
+[07/14/2025 14:45:07 INFO]: Training accuracy at epoch 129: 4.6
+[07/14/2025 14:45:07 INFO]: Val accuracy at epoch 129: 2.4000000953674316
+[07/14/2025 14:45:07 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.14it/s] 50%|█████     | 40/80 [00:00<00:00, 197.08it/s] 75%|███████▌  | 60/80 [00:00<00:00, 196.93it/s]100%|██████████| 80/80 [00:00<00:00, 197.17it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:45:08 INFO]: Training loss at epoch 130: 0.498339819163084
+[07/14/2025 14:45:08 INFO]: Training accuracy at epoch 130: 4.8
+[07/14/2025 14:45:08 INFO]: Val accuracy at epoch 130: 2.4000000953674316
+[07/14/2025 14:45:08 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.07it/s] 50%|█████     | 40/80 [00:00<00:00, 197.11it/s] 75%|███████▌  | 60/80 [00:00<00:00, 196.48it/s]100%|██████████| 80/80 [00:00<00:00, 196.96it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:45:08 INFO]: Training loss at epoch 131: 0.49820812195539477
+[07/14/2025 14:45:08 INFO]: Training accuracy at epoch 131: 4.625
+[07/14/2025 14:45:08 INFO]: Val accuracy at epoch 131: 2.25
+[07/14/2025 14:45:08 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.35it/s] 50%|█████     | 40/80 [00:00<00:00, 196.90it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.24it/s]100%|██████████| 80/80 [00:00<00:00, 196.97it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:45:09 INFO]: Training loss at epoch 132: 0.49786911234259607
+[07/14/2025 14:45:09 INFO]: Training accuracy at epoch 132: 4.6875
+[07/14/2025 14:45:09 INFO]: Val accuracy at epoch 132: 2.4000000953674316
+[07/14/2025 14:45:09 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 195.84it/s] 50%|█████     | 40/80 [00:00<00:00, 196.53it/s] 75%|███████▌  | 60/80 [00:00<00:00, 196.98it/s]100%|██████████| 80/80 [00:00<00:00, 197.24it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:45:09 INFO]: Training loss at epoch 133: 0.497699935734272
+[07/14/2025 14:45:09 INFO]: Training accuracy at epoch 133: 4.625
+[07/14/2025 14:45:09 INFO]: Val accuracy at epoch 133: 2.4000000953674316
+[07/14/2025 14:45:09 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.55it/s] 50%|█████     | 40/80 [00:00<00:00, 197.05it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.30it/s]100%|██████████| 80/80 [00:00<00:00, 197.39it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:45:10 INFO]: Training loss at epoch 134: 0.49765648506581783
+[07/14/2025 14:45:10 INFO]: Training accuracy at epoch 134: 4.6625
+[07/14/2025 14:45:10 INFO]: Val accuracy at epoch 134: 2.3499999046325684
+[07/14/2025 14:45:10 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.12it/s] 50%|█████     | 40/80 [00:00<00:00, 196.91it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.21it/s]100%|██████████| 80/80 [00:00<00:00, 197.29it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:45:10 INFO]: Training loss at epoch 135: 0.4973282996565104
+[07/14/2025 14:45:10 INFO]: Training accuracy at epoch 135: 4.725
+[07/14/2025 14:45:10 INFO]: Val accuracy at epoch 135: 2.299999952316284
+[07/14/2025 14:45:10 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.16it/s] 50%|█████     | 40/80 [00:00<00:00, 196.82it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.11it/s]100%|██████████| 80/80 [00:00<00:00, 197.34it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:45:11 INFO]: Training loss at epoch 136: 0.49710909798741343
+[07/14/2025 14:45:11 INFO]: Training accuracy at epoch 136: 4.5875
+[07/14/2025 14:45:11 INFO]: Val accuracy at epoch 136: 2.4000000953674316
+[07/14/2025 14:45:11 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.56it/s] 50%|█████     | 40/80 [00:00<00:00, 196.95it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.14it/s]100%|██████████| 80/80 [00:00<00:00, 197.26it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:45:11 INFO]: Training loss at epoch 137: 0.4968760419636965
+[07/14/2025 14:45:11 INFO]: Training accuracy at epoch 137: 4.65
+[07/14/2025 14:45:11 INFO]: Val accuracy at epoch 137: 2.3499999046325684
+[07/14/2025 14:45:11 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 195.76it/s] 50%|█████     | 40/80 [00:00<00:00, 196.64it/s] 75%|███████▌  | 60/80 [00:00<00:00, 196.86it/s]100%|██████████| 80/80 [00:00<00:00, 197.11it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:45:12 INFO]: Training loss at epoch 138: 0.49672701992094515
+[07/14/2025 14:45:12 INFO]: Training accuracy at epoch 138: 4.6625
+[07/14/2025 14:45:12 INFO]: Val accuracy at epoch 138: 2.299999952316284
+[07/14/2025 14:45:12 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.11it/s] 50%|█████     | 40/80 [00:00<00:00, 196.89it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.13it/s]100%|██████████| 80/80 [00:00<00:00, 197.36it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:45:12 INFO]: Training loss at epoch 139: 0.49655100181698797
+[07/14/2025 14:45:12 INFO]: Training accuracy at epoch 139: 4.55
+[07/14/2025 14:45:12 INFO]: Val accuracy at epoch 139: 2.3499999046325684
+  0%|          | 0/10 [00:00<?, ?it/s] 20%|██        | 2/10 [00:00<00:00, 17.36it/s] 40%|████      | 4/10 [00:00<00:00, 17.46it/s] 60%|██████    | 6/10 [00:00<00:00, 17.48it/s] 80%|████████  | 8/10 [00:00<00:00, 17.50it/s]100%|██████████| 10/10 [00:00<00:00, 14.83it/s]                                                 0%|          | 0/2 [00:00<?, ?it/s]                                       0%|          | 0/80 [00:00<?, ?it/s] 20%|██        | 16/80 [00:00<00:00, 151.98it/s] 40%|████      | 32/80 [00:00<00:00, 152.25it/s] 60%|██████    | 48/80 [00:00<00:00, 152.40it/s] 80%|████████  | 64/80 [00:00<00:00, 152.53it/s]100%|██████████| 80/80 [00:00<00:00, 152.55it/s]                                                [07/14/2025 14:45:13 INFO]: Training accuracy: {30: 4.675000190734863, 31: 4.675000190734863, 32: 4.675000190734863, 33: 4.675000190734863, 34: 4.675000190734863, 35: 4.675000190734863, 36: 4.675000190734863, 37: 4.675000190734863, 38: 4.675000190734863, 39: 4.675000190734863, 40: 4.675000190734863}
+[07/14/2025 14:45:13 INFO]: Val accuracy: {30: 2.3499999046325684, 31: 2.3499999046325684, 32: 2.3499999046325684, 33: 2.3499999046325684, 34: 2.3499999046325684, 35: 2.3499999046325684, 36: 2.3499999046325684, 37: 2.3499999046325684, 38: 2.3499999046325684, 39: 2.3499999046325684, 40: 2.3499999046325684}
+[07/14/2025 14:45:13 INFO]: Test accuracy (hard data): {30: 0.0, 31: 0.0, 32: 0.0, 33: 0.0, 34: 0.0, 35: 0.0, 36: 0.0, 37: 0.0, 38: 0.0, 39: 0.0, 40: 0.0}
+[07/14/2025 14:45:13 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 192.71it/s] 50%|█████     | 40/80 [00:00<00:00, 195.17it/s] 75%|███████▌  | 60/80 [00:00<00:00, 196.00it/s]100%|██████████| 80/80 [00:00<00:00, 196.43it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:45:14 INFO]: Training loss at epoch 140: 0.49641013368964193
+[07/14/2025 14:45:14 INFO]: Training accuracy at epoch 140: 4.6875
+[07/14/2025 14:45:14 INFO]: Val accuracy at epoch 140: 2.3499999046325684
+[07/14/2025 14:45:14 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.02it/s] 50%|█████     | 40/80 [00:00<00:00, 196.69it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.03it/s]100%|██████████| 80/80 [00:00<00:00, 196.87it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:45:14 INFO]: Training loss at epoch 141: 0.4961589381098747
+[07/14/2025 14:45:14 INFO]: Training accuracy at epoch 141: 4.65
+[07/14/2025 14:45:14 INFO]: Val accuracy at epoch 141: 2.299999952316284
+[07/14/2025 14:45:14 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 195.70it/s] 50%|█████     | 40/80 [00:00<00:00, 196.51it/s] 75%|███████▌  | 60/80 [00:00<00:00, 196.94it/s]100%|██████████| 80/80 [00:00<00:00, 197.09it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:45:15 INFO]: Training loss at epoch 142: 0.4960701912641525
+[07/14/2025 14:45:15 INFO]: Training accuracy at epoch 142: 4.6875
+[07/14/2025 14:45:15 INFO]: Val accuracy at epoch 142: 2.3499999046325684
+[07/14/2025 14:45:15 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 195.31it/s] 50%|█████     | 40/80 [00:00<00:00, 196.37it/s] 75%|███████▌  | 60/80 [00:00<00:00, 196.64it/s]100%|██████████| 80/80 [00:00<00:00, 196.84it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:45:15 INFO]: Training loss at epoch 143: 0.4959206685423851
+[07/14/2025 14:45:15 INFO]: Training accuracy at epoch 143: 4.7
+[07/14/2025 14:45:15 INFO]: Val accuracy at epoch 143: 2.299999952316284
+[07/14/2025 14:45:15 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 195.44it/s] 50%|█████     | 40/80 [00:00<00:00, 196.49it/s] 75%|███████▌  | 60/80 [00:00<00:00, 196.76it/s]100%|██████████| 80/80 [00:00<00:00, 197.13it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:45:15 INFO]: Training loss at epoch 144: 0.49549840241670606
+[07/14/2025 14:45:15 INFO]: Training accuracy at epoch 144: 4.725
+[07/14/2025 14:45:15 INFO]: Val accuracy at epoch 144: 2.299999952316284
+[07/14/2025 14:45:15 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 195.91it/s] 50%|█████     | 40/80 [00:00<00:00, 196.51it/s] 75%|███████▌  | 60/80 [00:00<00:00, 196.73it/s]100%|██████████| 80/80 [00:00<00:00, 197.02it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:45:16 INFO]: Training loss at epoch 145: 0.49531881920993326
+[07/14/2025 14:45:16 INFO]: Training accuracy at epoch 145: 4.675
+[07/14/2025 14:45:16 INFO]: Val accuracy at epoch 145: 2.299999952316284
+[07/14/2025 14:45:16 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 195.91it/s] 50%|█████     | 40/80 [00:00<00:00, 195.97it/s] 75%|███████▌  | 60/80 [00:00<00:00, 196.26it/s]100%|██████████| 80/80 [00:00<00:00, 196.66it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:45:16 INFO]: Training loss at epoch 146: 0.4951756414026022
+[07/14/2025 14:45:16 INFO]: Training accuracy at epoch 146: 4.675
+[07/14/2025 14:45:16 INFO]: Val accuracy at epoch 146: 2.3499999046325684
+[07/14/2025 14:45:16 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.32it/s] 50%|█████     | 40/80 [00:00<00:00, 196.92it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.05it/s]100%|██████████| 80/80 [00:00<00:00, 196.85it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:45:17 INFO]: Training loss at epoch 147: 0.4948466967791319
+[07/14/2025 14:45:17 INFO]: Training accuracy at epoch 147: 4.7375
+[07/14/2025 14:45:17 INFO]: Val accuracy at epoch 147: 2.200000047683716
+[07/14/2025 14:45:17 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.52it/s] 50%|█████     | 40/80 [00:00<00:00, 197.12it/s] 75%|███████▌  | 60/80 [00:00<00:00, 196.80it/s]100%|██████████| 80/80 [00:00<00:00, 197.06it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:45:17 INFO]: Training loss at epoch 148: 0.49481842331588266
+[07/14/2025 14:45:17 INFO]: Training accuracy at epoch 148: 4.625
+[07/14/2025 14:45:17 INFO]: Val accuracy at epoch 148: 2.299999952316284
+[07/14/2025 14:45:17 INFO]: Saving model to: model_.pth
+  0%|          | 0/80 [00:00<?, ?it/s] 25%|██▌       | 20/80 [00:00<00:00, 196.79it/s] 50%|█████     | 40/80 [00:00<00:00, 197.36it/s] 75%|███████▌  | 60/80 [00:00<00:00, 197.53it/s]100%|██████████| 80/80 [00:00<00:00, 197.67it/s]                                                  0%|          | 0/2 [00:00<?, ?it/s]                                     [07/14/2025 14:45:18 INFO]: Training loss at epoch 149: 0.494575260207057
+[07/14/2025 14:45:18 INFO]: Training accuracy at epoch 149: 4.7625
+[07/14/2025 14:45:18 INFO]: Val accuracy at epoch 149: 2.299999952316284
+  0%|          | 0/10 [00:00<?, ?it/s] 20%|██        | 2/10 [00:00<00:00, 17.40it/s] 40%|████      | 4/10 [00:00<00:00, 17.46it/s] 60%|██████    | 6/10 [00:00<00:00, 17.49it/s] 80%|████████  | 8/10 [00:00<00:00, 17.51it/s]100%|██████████| 10/10 [00:00<00:00, 17.52it/s]                                                 0%|          | 0/2 [00:00<?, ?it/s]                                       0%|          | 0/80 [00:00<?, ?it/s] 20%|██        | 16/80 [00:00<00:00, 152.09it/s] 40%|████      | 32/80 [00:00<00:00, 152.30it/s] 60%|██████    | 48/80 [00:00<00:00, 152.53it/s] 80%|████████  | 64/80 [00:00<00:00, 152.76it/s]100%|██████████| 80/80 [00:00<00:00, 152.74it/s]                                                [07/14/2025 14:45:19 INFO]: Training accuracy: {30: 5.074999809265137, 31: 5.074999809265137, 32: 5.074999809265137, 33: 5.074999809265137, 34: 5.074999809265137, 35: 5.074999809265137, 36: 5.074999809265137, 37: 5.074999809265137, 38: 5.074999809265137, 39: 5.074999809265137, 40: 5.074999809265137}
+[07/14/2025 14:45:19 INFO]: Val accuracy: {30: 2.299999952316284, 31: 2.299999952316284, 32: 2.299999952316284, 33: 2.299999952316284, 34: 2.299999952316284, 35: 2.299999952316284, 36: 2.299999952316284, 37: 2.299999952316284, 38: 2.299999952316284, 39: 2.299999952316284, 40: 2.299999952316284}
+[07/14/2025 14:45:19 INFO]: Test accuracy (hard data): {30: 0.0, 31: 0.0, 32: 0.0, 33: 0.0, 34: 0.0, 35: 0.0, 36: 0.0, 37: 0.0, 38: 0.0, 39: 0.0, 40: 0.0}
+[07/14/2025 14:45:19 INFO]: Saving model to: model_.pth
+[07/14/2025 14:45:19 INFO]: OrderedDict([('max_iters', 1), ('run_id', 'sluttish-Nykia'), ('test_acc', {30: 0.0, 31: 0.0, 32: 0.0, 33: 0.0, 34: 0.0, 35: 0.0, 36: 0.0, 37: 0.0, 38: 0.0, 39: 0.0, 40: 0.0}), ('test_data', 512), ('test_iters', [30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40]), ('test_mode', 'default'), ('train_data', 32), ('train_acc', {30: 5.074999809265137, 31: 5.074999809265137, 32: 5.074999809265137, 33: 5.074999809265137, 34: 5.074999809265137, 35: 5.074999809265137, 36: 5.074999809265137, 37: 5.074999809265137, 38: 5.074999809265137, 39: 5.074999809265137, 40: 5.074999809265137}), ('val_acc', {30: 2.299999952316284, 31: 2.299999952316284, 32: 2.299999952316284, 33: 2.299999952316284, 34: 2.299999952316284, 35: 2.299999952316284, 36: 2.299999952316284, 37: 2.299999952316284, 38: 2.299999952316284, 39: 2.299999952316284, 40: 2.299999952316284})])
+
+JOB STATISTICS
+==============
+Job ID: 13144789
+Cluster: snellius
+User/Group: mmazuryk1/mmazuryk1
+State: COMPLETED (exit code 0)
+Nodes: 1
+Cores per node: 18
+CPU Utilized: 00:01:23
+CPU Efficiency: 4.85% of 00:28:30 core-walltime
+Job Wall-clock time: 00:01:35
+Memory Utilized: 980.44 MB
+Memory Efficiency: 0.80% of 120.00 GB (120.00 GB/node)

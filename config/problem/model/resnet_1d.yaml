@@ -1,0 +1,9 @@
+model: resnet_1d
+model_path:
+width: 400
+max_iters: 1
+noise_type: none
+noise_block_idx: 1
+test_iterations:
+  low: 30
+  high: 40

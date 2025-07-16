@@ -1,0 +1,56 @@
+============================================================================================== 
+Warning! Mixing Conda and module environments may lead to corruption of the
+user environment. 
+We do not recommend users mixing those two environments unless absolutely
+necessary. Note that 
+SURF does not provide any support for Conda environment.
+For more information, please refer to our software policy page:
+https://servicedesk.surf.nl/wiki/display/WIKI/Software+policy+Snellius#SoftwarepolicySnellius-UseofAnacondaandMinicondaenvironmentsonSnellius 
+
+Remember that many packages have already been installed on the system and can
+be loaded using 
+the 'module load <package__name>' command. If you are uncertain if a package is
+already available 
+on the system, please use 'module avail' or 'module spider' to search for it.
+============================================================================================== 
+Traceback (most recent call last):
+  File "train_model.py", line 23, in <module>
+    from torch.utils.tensorboard import SummaryWriter
+  File "/home/mmazuryk1/.conda/envs/agi/lib/python3.8/site-packages/torch/utils/tensorboard/__init__.py", line 8, in <module>
+    from .writer import FileWriter, SummaryWriter  # noqa F401
+  File "/home/mmazuryk1/.conda/envs/agi/lib/python3.8/site-packages/torch/utils/tensorboard/writer.py", line 10, in <module>
+    from tensorboard.compat.proto.event_pb2 import SessionLog
+  File "/home/mmazuryk1/.conda/envs/agi/lib/python3.8/site-packages/tensorboard/compat/proto/event_pb2.py", line 17, in <module>
+    from tensorboard.compat.proto import summary_pb2 as tensorboard_dot_compat_dot_proto_dot_summary__pb2
+  File "/home/mmazuryk1/.conda/envs/agi/lib/python3.8/site-packages/tensorboard/compat/proto/summary_pb2.py", line 17, in <module>
+    from tensorboard.compat.proto import tensor_pb2 as tensorboard_dot_compat_dot_proto_dot_tensor__pb2
+  File "/home/mmazuryk1/.conda/envs/agi/lib/python3.8/site-packages/tensorboard/compat/proto/tensor_pb2.py", line 16, in <module>
+    from tensorboard.compat.proto import resource_handle_pb2 as tensorboard_dot_compat_dot_proto_dot_resource__handle__pb2
+  File "/home/mmazuryk1/.conda/envs/agi/lib/python3.8/site-packages/tensorboard/compat/proto/resource_handle_pb2.py", line 16, in <module>
+    from tensorboard.compat.proto import tensor_shape_pb2 as tensorboard_dot_compat_dot_proto_dot_tensor__shape__pb2
+  File "/home/mmazuryk1/.conda/envs/agi/lib/python3.8/site-packages/tensorboard/compat/proto/tensor_shape_pb2.py", line 36, in <module>
+    _descriptor.FieldDescriptor(
+  File "/home/mmazuryk1/.conda/envs/agi/lib/python3.8/site-packages/google/protobuf/descriptor.py", line 621, in __new__
+    _message.Message._CheckCalledFromGeneratedFile()
+TypeError: Descriptors cannot be created directly.
+If this call came from a _pb2.py file, your generated code is out of date and must be regenerated with protoc >= 3.19.0.
+If you cannot immediately regenerate your protos, some other possible workarounds are:
+ 1. Downgrade the protobuf package to 3.20.x or lower.
+ 2. Set PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python (but this will use pure-Python parsing and will be much slower).
+
+More information: https://developers.google.com/protocol-buffers/docs/news/2022-05-06#python-updates
+
+JOB STATISTICS
+==============
+Job ID: 13115884
+Cluster: snellius
+User/Group: mmazuryk1/mmazuryk1
+State: RUNNING
+Nodes: 1
+Cores per node: 18
+CPU Utilized: 00:00:00
+CPU Efficiency: 0.00% of 00:03:54 core-walltime
+Job Wall-clock time: 00:00:13
+Memory Utilized: 0.00 MB
+Memory Efficiency: 0.00% of 120.00 GB (120.00 GB/node)
+WARNING: Efficiency statistics can only be obtained after the job has ended as seff tool is based on the accounting database data.
