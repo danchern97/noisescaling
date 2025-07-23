@@ -1,0 +1,19 @@
+training:
+  batch_size: 1024
+  num_workers: 4
+  learning_rate: 0.001
+  epochs: 10
+  eval_interval: 500
+  device: "cuda:0"
+  experiment_name: "sudoku-baseline"
+  training_metrics: ["accuracy", "accuracy_sudoku"]
+  validation_metrics: ["accuracy", "accuracy_sudoku"]
+  seed: 42
+
+dataset:
+  name: "sudoku"
+  path: "./data/sudoku"
+
+model:
+  name: "SudokuCNN"
+  loss: "sudoku_loss" 
