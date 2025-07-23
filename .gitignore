@@ -7,6 +7,7 @@ data/
 .idea/*
 pretrained_models
 logs
+wandb
 cmllogs
 .DS_Store
 *.pdf
