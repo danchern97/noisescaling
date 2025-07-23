@@ -1,120 +1,0 @@
-============================================================================================== 
-Warning! Mixing Conda and module environments may lead to corruption of the
-user environment. 
-We do not recommend users mixing those two environments unless absolutely
-necessary. Note that 
-SURF does not provide any support for Conda environment.
-For more information, please refer to our software policy page:
-https://servicedesk.surf.nl/wiki/display/WIKI/Software+policy+Snellius#SoftwarepolicySnellius-UseofAnacondaandMinicondaenvironmentsonSnellius 
-
-Remember that many packages have already been installed on the system and can
-be loaded using 
-the 'module load <package__name>' command. If you are uncertain if a package is
-already available 
-on the system, please use 'module avail' or 'module spider' to search for it.
-============================================================================================== 
-[07/11/2025 14:39:40 INFO]: 
-_________________________________________________
-
-[07/11/2025 14:39:40 INFO]: test_model.py main() running.
-[07/11/2025 14:39:40 INFO]: problem:
-  hyp:
-    alpha: 1
-    clip: 1
-    epochs: 150
-    lr: 0.001
-    lr_decay: step
-    lr_factor: 0.1
-    lr_schedule:
-    - 60
-    - 100
-    lr_throttle: false
-    optimizer: adam
-    save_period: -1
-    test_batch_size: 1000
-    test_mode: default
-    train_batch_size: 300
-    train_mode: progressive
-    val_period: 20
-    warmup_period: 10
-  model:
-    model: dt_net_recall_1d
-    model_path: /gpfs/home5/mmazuryk1/AGI/deep-thinking//outputs/training_default/training-worldly-Latangela
-    width: 400
-    max_iters: 30
-    test_iterations:
-      low: 30
-      high: 50
-  name: prefix_sums
-  test_data: 512
-  train_data: 32
-name: testing_default
-quick_test: false
-run_id: asprawl-Jennifier
-
-[07/11/2025 14:39:40 INFO]: problem:
-  hyp:
-    alpha: 1
-    clip: 1
-    epochs: 150
-    lr: 0.001
-    lr_decay: step
-    lr_factor: 0.1
-    lr_schedule:
-    - 60
-    - 100
-    lr_throttle: false
-    optimizer: adam
-    save_period: -1
-    test_batch_size: 1000
-    test_mode: default
-    train_batch_size: 300
-    train_mode: progressive
-    val_period: 20
-    warmup_period: 10
-  model:
-    model: dt_net_recall_1d
-    model_path: /gpfs/home5/mmazuryk1/AGI/deep-thinking//outputs/training_default/training-worldly-Latangela
-    width: 400
-    max_iters: 30
-    test_iterations:
-      low: 30
-      high: 50
-  name: prefix_sums
-  test_data: 512
-  train_data: 32
-name: testing_default
-quick_test: false
-run_id: asprawl-Jennifier
-
-Files already downloaded and verified
-Loading data with 32 bits.
-Files already downloaded and verified
-Loading data with 512 bits.
-[07/11/2025 14:39:40 INFO]: Loading model from checkpoint /gpfs/home5/mmazuryk1/AGI/deep-thinking//outputs/training_default/training-worldly-Latangela/model_best.pth...
-[07/11/2025 14:39:40 INFO]: This dt_net_recall_1d has 3.124 million parameters.
-[07/11/2025 14:39:40 INFO]: ==> Starting testing...
-/home/mmazuryk1/.conda/envs/agi/lib/python3.8/site-packages/easy_to_hard_data.py:215: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
-  self.inputs = torch.load(inputs_path).unsqueeze(1) - 0.5
-/home/mmazuryk1/.conda/envs/agi/lib/python3.8/site-packages/easy_to_hard_data.py:216: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
-  self.targets = torch.load(targets_path).long()
-/gpfs/home5/mmazuryk1/AGI/deep-thinking/deepthinking/utils/tools.py:134: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
-  state_dict = torch.load(model_path, map_location=device)
-  0%|          | 0/10 [00:00<?, ?it/s] 10%|█         | 1/10 [00:03<00:33,  3.75s/it] 20%|██        | 2/10 [00:06<00:25,  3.18s/it] 30%|███       | 3/10 [00:09<00:20,  2.98s/it] 40%|████      | 4/10 [00:11<00:17,  2.88s/it] 50%|█████     | 5/10 [00:14<00:14,  2.83s/it] 60%|██████    | 6/10 [00:17<00:11,  2.79s/it] 70%|███████   | 7/10 [00:20<00:08,  2.77s/it] 80%|████████  | 8/10 [00:22<00:05,  2.76s/it] 90%|█████████ | 9/10 [00:25<00:02,  2.75s/it]100%|██████████| 10/10 [00:28<00:00,  2.75s/it]                                                 0%|          | 0/2 [00:00<?, ?it/s] 50%|█████     | 1/2 [00:01<00:01,  1.73s/it]100%|██████████| 2/2 [00:01<00:00,  1.20it/s]                                               0%|          | 0/26 [00:00<?, ?it/s]  4%|▍         | 1/26 [00:00<00:06,  3.91it/s] 12%|█▏        | 3/26 [00:00<00:02,  8.57it/s] 19%|█▉        | 5/26 [00:00<00:01, 10.94it/s] 27%|██▋       | 7/26 [00:00<00:01, 12.30it/s] 35%|███▍      | 9/26 [00:00<00:01, 13.14it/s] 42%|████▏     | 11/26 [00:00<00:01, 13.68it/s] 50%|█████     | 13/26 [00:01<00:00, 14.06it/s] 58%|█████▊    | 15/26 [00:01<00:00, 14.47it/s] 65%|██████▌   | 17/26 [00:01<00:00, 14.75it/s] 73%|███████▎  | 19/26 [00:01<00:00, 14.89it/s] 81%|████████  | 21/26 [00:01<00:00, 15.04it/s] 88%|████████▊ | 23/26 [00:01<00:00, 15.15it/s] 96%|█████████▌| 25/26 [00:01<00:00, 15.22it/s]                                               [07/11/2025 14:40:12 INFO]: 20250711 14:40:12 Training accuracy: {30: 100.0, 31: 100.0, 32: 100.0, 33: 100.0, 34: 100.0, 35: 100.0, 36: 100.0, 37: 100.0, 38: 100.0, 39: 100.0, 40: 100.0, 41: 100.0, 42: 100.0, 43: 100.0, 44: 100.0, 45: 100.0, 46: 100.0, 47: 100.0, 48: 100.0, 49: 100.0, 50: 100.0}
-[07/11/2025 14:40:12 INFO]: 20250711 14:40:12 Val accuracy: {30: 100.0, 31: 100.0, 32: 100.0, 33: 100.0, 34: 100.0, 35: 100.0, 36: 100.0, 37: 100.0, 38: 100.0, 39: 100.0, 40: 100.0, 41: 100.0, 42: 100.0, 43: 100.0, 44: 100.0, 45: 100.0, 46: 100.0, 47: 100.0, 48: 100.0, 49: 100.0, 50: 100.0}
-[07/11/2025 14:40:12 INFO]: 20250711 14:40:12 Testing accuracy (hard data): {30: 0.0, 31: 0.0, 32: 0.0, 33: 0.0, 34: 0.0, 35: 0.0, 36: 0.0, 37: 0.0, 38: 0.0, 39: 0.0, 40: 0.0, 41: 0.0, 42: 0.0, 43: 0.0, 44: 0.0, 45: 0.0, 46: 0.0, 47: 0.0, 48: 0.0, 49: 0.0, 50: 0.0}
-[07/11/2025 14:40:12 INFO]: OrderedDict([('epochs', 150), ('lr', 0.001), ('lr_factor', 0.1), ('max_iters', 30), ('model', 'dt_net_recall_1d_width=400'), ('model_path', '/gpfs/home5/mmazuryk1/AGI/deep-thinking//outputs/training_default/training-worldly-Latangela/model_best.pth'), ('num_params', 3123600), ('optimizer', 'adam'), ('val_acc', {30: 100.0, 31: 100.0, 32: 100.0, 33: 100.0, 34: 100.0, 35: 100.0, 36: 100.0, 37: 100.0, 38: 100.0, 39: 100.0, 40: 100.0, 41: 100.0, 42: 100.0, 43: 100.0, 44: 100.0, 45: 100.0, 46: 100.0, 47: 100.0, 48: 100.0, 49: 100.0, 50: 100.0}), ('run_id', 'asprawl-Jennifier'), ('test_acc', {30: 0.0, 31: 0.0, 32: 0.0, 33: 0.0, 34: 0.0, 35: 0.0, 36: 0.0, 37: 0.0, 38: 0.0, 39: 0.0, 40: 0.0, 41: 0.0, 42: 0.0, 43: 0.0, 44: 0.0, 45: 0.0, 46: 0.0, 47: 0.0, 48: 0.0, 49: 0.0, 50: 0.0}), ('test_data', 512), ('test_iters', [30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50]), ('test_mode', 'default'), ('train_data', 32), ('train_acc', {30: 100.0, 31: 100.0, 32: 100.0, 33: 100.0, 34: 100.0, 35: 100.0, 36: 100.0, 37: 100.0, 38: 100.0, 39: 100.0, 40: 100.0, 41: 100.0, 42: 100.0, 43: 100.0, 44: 100.0, 45: 100.0, 46: 100.0, 47: 100.0, 48: 100.0, 49: 100.0, 50: 100.0}), ('train_batch_size', 300), ('train_mode', 'progressive'), ('alpha', 1)])
-
-JOB STATISTICS
-==============
-Job ID: 13116822
-Cluster: snellius
-User/Group: mmazuryk1/mmazuryk1
-State: COMPLETED (exit code 0)
-Nodes: 1
-Cores per node: 18
-CPU Utilized: 00:00:38
-CPU Efficiency: 4.40% of 00:14:24 core-walltime
-Job Wall-clock time: 00:00:48
-Memory Utilized: 651.69 MB
-Memory Efficiency: 0.53% of 120.00 GB (120.00 GB/node)
