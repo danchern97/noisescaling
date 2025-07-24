@@ -101,8 +101,9 @@ def train_model(config):
     loss_fn = LOSS_REGISTRY[config['model']['loss']]
 
     model.train()
+    step = 0
     for epoch in range(config['training']['epochs']):
-        for i, (inputs, targets, metadata) in enumerate(tqdm(train_dataloader, desc='Training')):
+        for _, (inputs, targets, _) in enumerate(tqdm(train_dataloader, desc='Training')):
             inputs = inputs.to(device)
             targets = targets.to(device)
             predictions = model(inputs)
@@ -115,17 +116,18 @@ def train_model(config):
             log_dict['loss'] = loss.item()
             log_dict = {f"train/{k}": v for k, v in log_dict.items()}
             run.log(log_dict)
+            step += 1
 
-            if i % config['training']['eval_interval'] == 0:
+            if step % config['training']['eval_interval'] == 0:
                 eval_results = eval_model(model, val_dataloader, loss_fn, device, config['training']['validation_metrics'])
-                log_msg = f"Validation results at epoch {epoch}, step {i}: "
+                log_msg = f"Validation results at epoch {epoch}, step {step}: "
                 log_msg += ", ".join([f"{k}: {v:.4f}" for k, v in eval_results.items()])
                 logger.info(log_msg)
                 log_dict = {f"val/{k}": v for k, v in eval_results.items()}
                 run.log(log_dict)
                 
                 # Save model checkpoint
-                model_path = os.path.join(model_dir, f"model_{epoch}_{i}.pt")
+                model_path = os.path.join(model_dir, f"model_{step}.pt")
                 torch.save(model.state_dict(), model_path)
                 run.save(model_path)
 
