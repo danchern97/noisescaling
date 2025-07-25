@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 from typing import Optional
 from . import register_model, register_loss
+from .scalers import StaticScaler
 
 class Reshape(nn.Module):
     def __init__(self, *args):
@@ -35,46 +36,50 @@ class LinearBlock(nn.Module):
     def forward(self, x):
         return self.activation(self.linear(x))
         
-
-# TODO: Add ability to plug in Scaler & Aggregator.
 @register_model("SudokuCNN")
 class SudokuCNN(nn.Module):
-    def __init__(self, scaler : Optional[nn.Module] = None, aggregator : Optional[nn.Module] = None):
+    def __init__(self, scaler : Optional[nn.Module] = None, aggregator : Optional[nn.Module] = None, **kwargs):
         super(SudokuCNN, self).__init__()
         self.scaler = scaler
         self.aggregator = aggregator
-        module_list = [
+        self.enc = nn.Sequential(
             ConvBlock(1, 128),
-            ConvBlock(128, 256),
+            ConvBlock(128, 256)
+        )
+        self.mid = nn.Sequential(
             ConvBlock(256, 512),
             ConvBlock(512, 512),
             ConvBlock(512, 1024),
             ConvBlock(1024, 9),
-            # ConvBlock(9, 1),
             nn.Flatten(),
+        )
+        self.dec = nn.Sequential(
             LinearBlock(9*9*9, 512),
             nn.Dropout(0.2),
             LinearBlock(512, 81 * 9),
             nn.LayerNorm(81 * 9),
             Reshape((-1, 9, 9, 9)),
-        ]
-        if scaler is not None and aggregator is not None:
-            module_list.insert(1, scaler)
-            module_list.insert(-3, aggregator)
-            self.encoder = nn.Sequential(*module_list[:1])
-            self.mid = nn.Sequential(*module_list[1:-3])
-            self.decoder = nn.Sequential(*module_list[-2:])
-        else:
-            self.model = nn.Sequential(*module_list)
+        )
 
     def forward(self, x):
         if self.scaler is not None and self.aggregator is not None:
-            x = self.encoder(x)
-            x = self.aggregator(torch.stack([self.mid(x[:, i]) for i in range(x.shape[1])], dim=1))
-            x = self.decoder(x)
+            x = self.enc(x) # (B, 256, 9, 9)
+            x = self.scaler(x) # (B, n_reps, 256, 9, 9)
+            x = self.aggregator(torch.stack([self.mid(x[:, i]) for i in range(x.shape[1])], dim=1)) # (B, 1024)
+            x = self.dec(x) # (B, 9, 9, 9)
             return x
         else:
-            return self.model(x)
+            return self.dec(self.mid(self.enc(x)))
+
+@register_model("SudokuStaticScaler")
+class SudokuStaticScaler(StaticScaler):
+    def __init__(self, n_transforms : int = 1, **kwargs):
+        transformations = [
+            ConvBlock(256, 256)
+            for _ in range(n_transforms-1)
+        ]
+        transformations.append(nn.Identity())
+        super().__init__(transformations, **kwargs)
     
 @register_loss("sudoku_loss")
 def get_loss_sudoku(predictions, targets, **kwargs):
