@@ -23,24 +23,29 @@ class IRavenDataset(Dataset):
             npz = np.load(file)
 
             # pairs are 0-2, 3-5, 6-7 are context, 8 is predicted, so 8-15 are possible answers
-            # Use np.array to avoid UserWarning about slow tensor creation from list of ndarrays
-            context_np = np.array([
-                [npz['image'][i], npz['image'][i+1], npz['image'][i+2]] for i in range(0, 6, 3)
+            # Keep images as numpy arrays for torchvision transforms
+            images = npz['image']  # Get all images
+            
+            # Context: images 0-5 arranged as (2, 3, H, W)
+            context = np.array([
+                [images[i], images[i+1], images[i+2]] for i in range(0, 6, 3)
             ])  # shape: (2, 3, H, W)
-            context = torch.tensor(context_np)
-            pairs = npz['image'][6:8]
-            possible_answers = npz['image'][8:]
+            
+            # Pairs: images 6-7 
+            pairs = np.array([images[6], images[7]])  # shape: (2, H, W)
+            
+            # Possible answers: images 8-15
+            possible_answers = np.array([images[i] for i in range(8, 16)])  # shape: (8, H, W)
 
             self.samples.append({
                 'context': context,
                 'pairs': pairs,
                 'possible_answers': possible_answers,
-                'target': npz['target'],
-                'predict': npz['predict'],
+                'target': int(npz['target']),
+                'predict': int(npz['predict']),
                 'meta_structure': npz['meta_structure'],
                 'meta_matrix': npz['meta_matrix'],
                 'meta_target': npz['meta_target'],
-                'meta_structure': npz['meta_structure'],
             })  
 
     def __len__(self):
@@ -58,11 +63,38 @@ class IRavenDataset(Dataset):
         meta_matrix = sample['meta_matrix']
         meta_target = sample['meta_target']
 
-        # Optionally apply transform to all images
+        # Apply transform to all images (transform should return tensors)
         if self.transform:
-            context = torch.stack([torch.stack([self.transform(img) for img in triplet]) for triplet in context])
-            pairs = torch.stack([self.transform(img) for img in pairs])
-            possible_answers = torch.stack([self.transform(img) for img in possible_answers])
+            # Apply transform to each image individually
+            # Context: (2, 3, H, W) -> apply to each of the 6 images
+            context_list = []
+            for i in range(context.shape[0]):
+                triplet_list = []
+                for j in range(context.shape[1]):
+                    # Transform expects numpy array, returns tensor
+                    transformed_img = self.transform(context[i, j])
+                    triplet_list.append(transformed_img)
+                context_list.append(torch.stack(triplet_list))
+            context = torch.stack(context_list)
+            
+            # Pairs: (2, H, W) -> apply to each of the 2 images
+            pairs_list = []
+            for i in range(pairs.shape[0]):
+                transformed_img = self.transform(pairs[i])
+                pairs_list.append(transformed_img)
+            pairs = torch.stack(pairs_list)
+            
+            # Possible answers: (8, H, W) -> apply to each of the 8 images
+            answers_list = []
+            for i in range(possible_answers.shape[0]):
+                transformed_img = self.transform(possible_answers[i])
+                answers_list.append(transformed_img)
+            possible_answers = torch.stack(answers_list)
+        else:
+            # If no transform, convert to tensors manually
+            context = torch.from_numpy(context).float()
+            pairs = torch.from_numpy(pairs).float()
+            possible_answers = torch.from_numpy(possible_answers).float()
 
         return {
             'context': context,

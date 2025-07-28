@@ -1,7 +1,9 @@
 import torch
 from datasets import load_dataset, DatasetDict, ClassLabel, Value
 from torch.utils.data import Subset
-from iravendataset import IRavenDataset
+from .iravendataset import IRavenDataset
+from torchvision import transforms
+
 
 DATASET_REGISTRY = {}
 COLLATE_FN_REGISTRY = {}
@@ -80,7 +82,7 @@ def collate_fn_iraven(batch):
         batch: List of samples from IRavenDataset
         
     Returns:
-        tuple: (context, pairs, possible_answers, targets, metadata)
+        tuple: (inputs, targets, metadata) - compatible with training infrastructure
     """
     # Extract all components from the batch
     contexts = [sample['context'] for sample in batch]
@@ -92,7 +94,7 @@ def collate_fn_iraven(batch):
     context_batch = torch.stack(contexts)  # Shape: (batch_size, 2, 3, H, W)
     pairs_batch = torch.stack(pairs)       # Shape: (batch_size, 2, H, W)
     answers_batch = torch.stack(possible_answers)  # Shape: (batch_size, 8, H, W)
-    targets_batch = torch.tensor(targets)  # Shape: (batch_size,)
+    targets_batch = torch.tensor(targets, dtype=torch.long)  # Shape: (batch_size,)
     
     # Create metadata
     metadata = [{
@@ -102,26 +104,51 @@ def collate_fn_iraven(batch):
         'meta_target': sample['meta_target']
     } for sample in batch]
     
-    return context_batch, pairs_batch, answers_batch, targets_batch, metadata 
+    # Package inputs as a tuple that the IRavenModel.forward() expects
+    inputs = (context_batch, pairs_batch, answers_batch)
+    
+    return inputs, targets_batch, metadata 
 
 
 @register_dataset("iraven")
-def load_iraven(data_dir=None, transform=None) -> DatasetDict:
+def load_iraven(cache_dir, data_dir=None, transform=None, **kwargs) -> DatasetDict:
     """
     Loads the I-RAVEN dataset from .npz files.
     
     Args:
-        cache_dir (str): Cache directory (not used for I-RAVEN, kept for consistency)
-        data_dir (str): Path to directory containing .npz files (e.g., 'data/center_single')
+        cache_dir (str): Path to directory containing .npz files (used as data_dir for I-RAVEN)
+        data_dir (str, optional): Alternative path specification (if provided, overrides cache_dir)
         transform (callable, optional): Optional transform to be applied to images
     
     Returns:
         DatasetDict: Dictionary containing train, validation, and test datasets
     """
+    # For I-RAVEN, use cache_dir as the data directory unless data_dir is explicitly provided
     if data_dir is None:
-        raise ValueError("data_dir must be specified for I-RAVEN dataset")
+        data_dir = cache_dir
     
-
+    # Define a simple preprocessing transform if none provided
+    if transform is None:
+        # Import transforms here to avoid circular imports        
+        # Use the same preprocessing as in the notebook
+        def preprocess_image(image):
+            # Ensure image is in the right format for ToPILImage
+            if isinstance(image, torch.Tensor):
+                image = image.numpy()
+            
+            # Apply the transform pipeline
+            transform_pipeline = transforms.Compose([
+                transforms.ToPILImage(),
+                transforms.Resize((224, 224)),
+                transforms.Grayscale(num_output_channels=3),  # ensure 3 channels
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+            ])
+            
+            return transform_pipeline(image)
+        
+        transform = preprocess_image
+    
     dataset = IRavenDataset(data_dir, transform=transform)
     
     total_size = len(dataset)
@@ -134,14 +161,10 @@ def load_iraven(data_dir=None, transform=None) -> DatasetDict:
     train_indices = indices[:train_size]
     val_indices = indices[train_size:train_size + val_size]
     test_indices = indices[train_size + val_size:]
-    
-    # Create subset datasets
 
     train_dataset = Subset(dataset, train_indices)
     val_dataset = Subset(dataset, val_indices)
     test_dataset = Subset(dataset, test_indices)
-    
-    # Create DatasetDict
 
     dataset_dict = DatasetDict({
         "train": train_dataset,

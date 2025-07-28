@@ -20,3 +20,4 @@ def register_loss(name):
 from . import sudoku
 from . import resnet
 from . import aggregators
+from . import iraven

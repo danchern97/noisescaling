@@ -51,7 +51,11 @@ def eval_model(model, dataloader, loss_fns, device, metrics):
     
     for inputs, targets, metadata in dataloader:
         with torch.no_grad():
-            inputs = inputs.to(device)
+            # if inputs is a tuple pass all of them to device
+            if isinstance(inputs, tuple):
+                inputs = tuple(inp.to(device) for inp in inputs)
+            else:
+                inputs = inputs.to(device)
             targets = targets.to(device)
             predictions = model(inputs)
             loss_values = torch.tensor([loss['fn'](predictions, targets) * loss['weight'] for loss in loss_fns])
@@ -124,12 +128,24 @@ def train_model(config):
     
     # Get the loss function from the registry
     loss_fns = [{'name': loss['name'], 'fn': LOSS_REGISTRY[loss['name']], 'weight': loss['weight']} for loss in config['model']['losses']]
-    model.compile()
+    
+    # Try to compile model for optimization (skip if not supported)
+    try:
+        model = torch.compile(model)
+        logger.info("Model compiled successfully for optimization")
+    except Exception as e:
+        logger.warning(f"Model compilation failed (continuing without): {e}")
+    
     model.train()
     step = 0
     for epoch in range(config['training']['epochs']):
         for _, (inputs, targets, _) in enumerate(tqdm(dataloaders['train'], desc='Training')):
-            inputs = inputs.to(device)
+
+            # if inputs is a tuple pass all of them to device
+            if isinstance(inputs, tuple):
+                inputs = tuple(inp.to(device) for inp in inputs)
+            else:
+                inputs = inputs.to(device)
             targets = targets.to(device)
             predictions = model(inputs)
             # Multiple losses are summed up with corresponding coefficients
