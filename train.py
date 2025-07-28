@@ -1,6 +1,7 @@
 import torch
 from torch.utils.data import DataLoader
 from torch.optim import AdamW
+from torch.optim.lr_scheduler import LinearLR
 import yaml
 import argparse
 import wandb
@@ -98,7 +99,7 @@ def train_model(config):
     model = get_model_by_name(config['model']['name'], scaler=scaler, aggregator=aggregator)
     logger.info(f"Model Architecture:\n{model}")
     # Load pretrained weights, if provided.
-    if config['model']['pretrained_path']:
+    if config['model'].get('pretrained_path', None):
         model.load_state_dict(torch.load(config['model']['pretrained_path']), strict=False)
     
     run.watch(model)
@@ -107,27 +108,33 @@ def train_model(config):
     logger.info(f"Number of trainable parameters: {num_trainable_params}")
     run.config.update({"num_trainable_params": num_trainable_params})
 
-    device = torch.device(config['training']['device'] if torch.cuda.is_available() else "cpu")
+    device = torch.device(config['training'].get('device', 'cuda:0') if torch.cuda.is_available() else "cpu")
     model.to(device)
 
     # Get the dataloaders
     dataloaders = get_dataloaders(config)
     
     # Set up the optimizer
-    if config['training']['scaler_regime'] == 'full':
+    if config['training'].get('scaler_regime', None) == 'full' or config['training'].get('scaler_regime', None) is None:
         parameters = model.parameters()
-    elif config['training']['scaler_regime'] == 'partial':
+    elif config['training'].get('scaler_regime', None) == 'partial':
         parameters = list(model.scaler.parameters()) + list(model.aggregator.parameters())
     else:
         raise ValueError(f"Invalid scaler regime: {config['training']['scaler_regime']}. Supported regimes are 'full' and 'partial'.")
-    optimizer = AdamW(parameters, lr=config['training']['learning_rate'])
-    
+    optimizer = AdamW(parameters, lr=config['training'].get('learning_rate', 0.001))
+    scheduler_config = config['training'].get('scheduler', None)
+    scheduler = None
+    if scheduler_config:
+        if scheduler_config['name'] == 'linear':
+            scheduler = LinearLR(optimizer, start_factor=0.1, end_factor=1.0, total_iters=scheduler_config['steps'])
+        else:
+            raise ValueError(f"Scheduler {scheduler_config['name']} not supported.")
     # Get the loss function from the registry
     loss_fns = [{'name': loss['name'], 'fn': LOSS_REGISTRY[loss['name']], 'weight': loss['weight']} for loss in config['model']['losses']]
     model.compile()
     model.train()
     step = 0
-    for epoch in range(config['training']['epochs']):
+    for epoch in range(config['training'].get('epochs', 100)):
         for _, (inputs, targets, _) in enumerate(tqdm(dataloaders['train'], desc='Training')):
             inputs = inputs.to(device)
             targets = targets.to(device)
@@ -139,15 +146,23 @@ def train_model(config):
             optimizer.step()
             optimizer.zero_grad()
             
+            if scheduler:
+                scheduler.step()
+
             log_dict = run_metrics(predictions, targets, model, inputs, device, config['training']['training_metrics'])
             for i, loss_fn in enumerate(loss_fns):
                 log_dict[loss_fn['name']] = loss_values[i].item()
             log_dict['loss'] = loss.item()
+            if scheduler:
+                log_dict['lr'] = scheduler.get_last_lr()[0]
+            else:
+                log_dict['lr'] = optimizer.param_groups[0]['lr']
+
             log_dict = {f"train/{k}": v for k, v in log_dict.items()}
             run.log(log_dict)
             step += 1
 
-            if step % config['training']['eval_interval'] == 0 and 'validation' in dataloaders:
+            if step % config['training'].get('eval_interval', 500) == 0 and 'validation' in dataloaders:
                 eval_results = eval_model(model, dataloaders['validation'], loss_fns, device, config['training']['validation_metrics'])
                 log_msg = f"Validation results at epoch {epoch}, step {step}: "
                 log_msg += ", ".join([f"{k}: {v:.4f}" for k, v in eval_results.items()])
