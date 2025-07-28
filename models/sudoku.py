@@ -3,6 +3,7 @@ import torch.nn as nn
 from typing import Optional
 from . import register_model, register_loss
 from .scalers import StaticScaler
+from .aggregators import Aggregator
 
 class Reshape(nn.Module):
     def __init__(self, *args):
@@ -55,7 +56,7 @@ class SudokuCNN(nn.Module):
         )
         self.dec = nn.Sequential(
             LinearBlock(9*9*9, 512),
-            nn.Dropout(0.2),
+            # nn.Dropout(0.2),
             LinearBlock(512, 81 * 9),
             nn.LayerNorm(81 * 9),
             Reshape((-1, 9, 9, 9)),
@@ -80,7 +81,20 @@ class SudokuStaticScaler(StaticScaler):
         ]
         transformations.append(nn.Identity())
         super().__init__(transformations, **kwargs)
-    
+
+@register_model("SudokuMLPAggregator")
+class SudokuMLPAggregator(Aggregator):
+    def __init__(self, n_transforms : int = 1, **kwargs):
+        super(SudokuMLPAggregator, self).__init__()
+        self.aggregator = nn.Sequential(
+            nn.Linear(9*9*9*n_transforms, 9*9*9),
+            nn.ReLU(),
+        )
+
+    def forward(self, x):
+        x = x.view(x.shape[0], -1) # (B, 9*9*9*n_transforms)
+        return self.aggregator(x)
+
 @register_loss("sudoku_loss")
 def get_loss_sudoku(predictions, targets, **kwargs):
     return nn.functional.cross_entropy(predictions, targets)
