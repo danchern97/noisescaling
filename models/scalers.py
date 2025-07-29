@@ -6,7 +6,8 @@ from typing import Literal
 import torch.nn.functional as F
 import torch.distributions as D
 
-__all__ = ["StaticScaler", "StochasticScaler", "NoiseInjector", "GaussianMixtureScaler"]
+
+__all__ = ["StaticScaler", "StochasticScaler", "NoiseInjector", "GaussianMixtureScaler", "NormalizingFlowScaler", "SudokuNormalizingFlowScaler"]
 
 
 class StaticScaler(nn.Module):
@@ -276,3 +277,93 @@ class GaussianMixtureScaler(StochasticScaler):
         gmm_samples = torch.sum(component_selection * component_samples, dim=2)  # (B, n_reps, *)
 
         return gmm_samples
+class SimpleCouplingLayer(nn.Module):
+    """
+    A single affine coupling layer for a normalizing flow.
+
+    This layer splits the input channels into two groups using a binary mask.
+    One group is left unchanged, while the other is transformed using an affine transformation
+    whose parameters are predicted by a neural network conditioned on the unchanged group.
+
+    The mask alternates between layers to ensure all channels are transformed across the stack.
+
+    Args:
+        c_in (int): Number of input channels.
+        hidden_dim (int): Number of hidden units in the coupling network.
+        mask_even (bool): If True, mask even channels; if False, mask odd channels.
+        n_layers (int): Number of layers in the coupling network.
+    """
+    def __init__(self, c_in, hidden_dim=64, mask_even=True, n_layers=3):
+        super().__init__()
+
+        layers = []
+        for i in range(n_layers):
+            in_ch = c_in if i == 0 else hidden_dim
+            layers.append(nn.Conv2d(in_ch, hidden_dim, 3, padding=1))
+            layers.append(nn.ReLU())
+        layers.append(nn.Conv2d(hidden_dim, 2 * c_in, 3, padding=1))
+        self.net = nn.Sequential(*layers)
+
+        mask = torch.zeros(1, c_in, 1, 1)
+        if mask_even:
+            mask[:, ::2] = 1
+        else:
+            mask[:, 1::2] = 1
+        self.register_buffer('mask', mask)
+
+    def forward(self, z, reverse=False):
+        mask = self.mask
+        z1 = z * mask
+        h = self.net(z1)
+        s, t = h.chunk(2, dim=1)
+        s = torch.tanh(s)
+        if not reverse:
+            z2 = (z * (1 - mask) + t) * torch.exp(s * (1 - mask))
+        else:
+            z2 = (z * (1 - mask)) * torch.exp(-s * (1 - mask)) - t
+        return z1 + z2
+
+class NormalizingFlowScaler(StochasticScaler):
+    """
+    Stochastic scaler using a stack of affine coupling layers as a normalizing flow.
+
+    This module generates multiple stochastic, invertible transformations of an input tensor
+    by sampling from a base distribution and passing the result through a sequence of
+    SimpleCouplingLayers. The flow is designed to increase the diversity and expressivity
+    of latent representations for downstream tasks.
+
+    Args:
+        n_coupling_layers (int): Number of coupling layers in the flow.
+        hidden_dim (int): Number of hidden units in each coupling layer's network.
+        n_reps (int): Number of stochastic representations to generate per input.
+        n_coupling_net_layers (int): Number of layers in each coupling network.
+        **kwargs: Additional arguments for the base class.
+    """
+
+    def __init__(self, n_coupling_layers=4, hidden_dim=64, n_reps=2, n_coupling_net_layers=3, **kwargs):
+        super().__init__()
+        self.n_reps = n_reps
+        self.c_in = 256  
+
+        self.flow_layers = nn.ModuleList([
+            SimpleCouplingLayer(self.c_in, hidden_dim, mask_even=(i % 2 == 0), n_layers=n_coupling_net_layers)
+            for i in range(n_coupling_layers)
+        ])
+        self.base_dist = D.Normal(0, 1)
+
+    def forward(self, x: torch.Tensor, n_reps: int = None, **kwargs) -> torch.Tensor:
+        n_reps = n_reps or self.n_reps
+        B, C, H, W = x.shape
+        z = self.base_dist.sample((B, n_reps, C, H, W)).to(x.device)
+        z = z + x.unsqueeze(1)
+        z = z.view(B * n_reps, C, H, W)
+        for flow in self.flow_layers:
+            z = flow(z)
+        z = z.view(B, n_reps, C, H, W)
+        return z
+
+    def get_distribution(self, x: torch.Tensor, **kwargs):
+        """
+        Not implemented for NormalizingFlowScaler.
+        """
+        raise NotImplementedError("get_distribution is not implemented for NormalizingFlowScaler.")

@@ -67,7 +67,7 @@ def eval_model(model, dataloader, loss_fns, device, metrics):
 
 def train_model(config):
     # Load environment variables
-    load_dotenv(dotenv_path='noisescaling/.env')
+    load_dotenv(dotenv_path='.env')
 
     # Set seed for reproducibility
     set_seed(config['training']['seed'])

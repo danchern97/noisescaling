@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from typing import Optional
 from . import register_model, register_loss
-from .scalers import StaticScaler
+from .scalers import StaticScaler, NormalizingFlowScaler
 from .aggregators import Aggregator
 
 class Reshape(nn.Module):
@@ -98,3 +98,7 @@ class SudokuMLPAggregator(Aggregator):
 @register_loss("sudoku_loss")
 def get_loss_sudoku(predictions, targets, **kwargs):
     return nn.functional.cross_entropy(predictions, targets)
+@register_model("SudokuNormalizingFlowScaler")
+class SudokuNormalizingFlowScaler(NormalizingFlowScaler):
+    def __init__(self, n_coupling_layers=4, hidden_dim=64, n_reps=2, **kwargs):
+        super().__init__(n_coupling_layers=n_coupling_layers, hidden_dim=hidden_dim, n_reps=n_reps, **kwargs)
