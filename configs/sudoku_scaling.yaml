@@ -1,0 +1,43 @@
+training:
+  experiment_name: "sudoku-scaling"
+  # Hardware parameters
+  num_workers: 4 # Number of workers for dataloader
+  device: "cuda:0" # Device to use for training
+  # Training parameters
+  batch_size: 1024
+  learning_rate: 0.005
+  epochs: 50
+  # Validation parameters
+  eval_interval: 500
+  training_metrics: ["accuracy", "accuracy_unknown_cells"]
+  validation_metrics: ["accuracy", "accuracy_unknown_cells"]
+  checkpoint_metric:
+    name: "accuracy"
+    mode: "max"
+  # Seed for reproducibility
+  seed: 42
+  # Regime for training the scaler and aggregator
+  # scaler_regime: "partial" # "partial" (only scaler and aggregator are trained) or "full" (all parameters are trained)
+  # Scheduler for training the scaler and aggregator
+  # scheduler:
+  #   name: "linear"
+  #   steps: 3000
+
+dataset:
+  name: "sudoku"
+  path: "./data/sudoku"
+
+model:
+  name: "SudokuCNN"
+  losses: [{"name": "cross_entropy", "weight": 1.0}]
+  pretrained_path: "./models_cache/sudoku-baseline-nodropout-lr0.02/model_80500.pt"
+  scaler:
+    name: "SudokuStaticScaler"
+    args:
+      n_transforms: 2
+  aggregator:
+    name: "AttentionAggregator"
+    args:
+      in_features: 729
+      aggregate_dim: 1
+      n_heads: 1

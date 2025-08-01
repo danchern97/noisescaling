@@ -39,7 +39,7 @@ class LinearBlock(nn.Module):
         
 @register_model("SudokuCNN")
 class SudokuCNN(nn.Module):
-    def __init__(self, scaler : Optional[nn.Module] = None, aggregator : Optional[nn.Module] = None, **kwargs):
+    def __init__(self, scaler : Optional[nn.Module] = None, aggregator : Optional[nn.Module] = None, dropout : float = 0.2, **kwargs):
         super(SudokuCNN, self).__init__()
         self.scaler = scaler
         self.aggregator = aggregator
@@ -56,7 +56,7 @@ class SudokuCNN(nn.Module):
         )
         self.dec = nn.Sequential(
             LinearBlock(9*9*9, 512),
-            # nn.Dropout(0.2),
+            nn.Dropout(dropout),
             LinearBlock(512, 81 * 9),
             nn.LayerNorm(81 * 9),
             Reshape((-1, 9, 9, 9)),
@@ -74,12 +74,15 @@ class SudokuCNN(nn.Module):
 
 @register_model("SudokuStaticScaler")
 class SudokuStaticScaler(StaticScaler):
-    def __init__(self, n_transforms : int = 1, **kwargs):
+    def __init__(self, n_transforms : int = 1, add_identity : bool = True, **kwargs):
         transformations = [
             ConvBlock(256, 256)
             for _ in range(n_transforms-1)
         ]
-        transformations.append(nn.Identity())
+        if add_identity:
+            transformations.append(nn.Identity())
+        else:
+            transformations.append(ConvBlock(256, 256))
         super().__init__(transformations, **kwargs)
 
 @register_model("SudokuMLPAggregator")
@@ -95,6 +98,6 @@ class SudokuMLPAggregator(Aggregator):
         x = x.view(x.shape[0], -1) # (B, 9*9*9*n_transforms)
         return self.aggregator(x)
 
-@register_loss("sudoku_loss")
-def get_loss_sudoku(predictions, targets, **kwargs):
+@register_loss("cross_entropy")
+def get_loss_cross_entropy(predictions, targets, **kwargs):
     return nn.functional.cross_entropy(predictions, targets)

@@ -1,0 +1,15 @@
+# SBATCH --job-name=sudoku-baseline
+# SBATCH --output=logs/sudoku-baseline_%x.out
+# SBATCH --error=logs/sudoku-baseline_%x.err
+# SBATCH --time=24:00:00
+# SBATCH --partition=gpu
+# SBATCH --gres=gpu:1
+# SBATCH --cpus-per-task=4
+# SBATCH --mem=16G
+
+SWEEP_ID="96up7p1k"
+COUNT=$1
+PROJECT="noisescaling"
+ENTITY="m-d-cherniavskii-university-of-amsterdam"
+
+wandb agent -p $PROJECT -e $ENTITY --count $COUNT $SWEEP_ID 

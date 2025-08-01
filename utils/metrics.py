@@ -21,8 +21,8 @@ def get_accuracy(predictions, targets, dim=1, **kwargs):
     """
     return (predictions.argmax(dim=dim) == targets).float().mean() 
 
-@register_metric("accuracy_sudoku")
-def get_accuracy_sudoku(predictions, targets, inputs, dim=1, **kwargs):
+@register_metric("accuracy_unknown_cells")
+def get_accuracy_unknown_cells(predictions, targets, inputs, dim=1, **kwargs):
     """
     Computes the accuracy of the unknown sudoku cells.
 
