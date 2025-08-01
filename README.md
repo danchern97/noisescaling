@@ -46,6 +46,40 @@ python -m noisescaling.train --config noisescaling/config.yaml
 
 All training parameters, model selection, and dataset choices are controlled through the configuration file.
 
+## Running a Hyperparameter Sweep
+
+To run a hyperparameter sweep, follow these steps:
+
+1.  **Initialize the Sweep:**
+    First, initialize the sweep using the `wandb sweep` command. This will create the sweep on Weights & Biases and print a `SWEEP_ID`.
+
+    ```bash
+    wandb sweep --project your-project-name sweep.yaml
+    ```
+    Replace `your-project-name` with your actual W&B project name.
+
+2.  **Run the Agents:**
+    Once you have the `SWEEP_ID`, you need to run the agents to perform the training runs. The `run_agents.sh` script is designed for this purpose.
+
+    Open `run_agents.sh` and set the `SWEEP_ID` variable to the ID you received from the previous step. You can also configure the number of agents (`N_AGENTS`) and the number of runs per agent (`COUNT_PER_AGENT`).
+
+    ```bash
+    # run_agents.sh
+    PROJECT="your-project-name"
+    ENTITY="your-wandb-entity"
+    SWEEP_ID="your-sweep-id" # <-- PASTE YOUR SWEEP ID HERE
+
+    N_AGENTS=3
+    COUNT_PER_AGENT=4
+    # ...
+    ```
+
+    Then, execute the script to start the agents:
+    ```bash
+    ./run_agents.sh
+    ```
+    This will launch multiple agents in the background, each running a set number of experiments from the sweep. You can monitor the progress of the sweep from your Weights & Biases dashboard.
+
 ## Extending the Framework
 
 This framework is designed to be easily extensible. Here’s how you can add your own components.
