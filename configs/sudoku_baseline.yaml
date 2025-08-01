@@ -6,7 +6,7 @@ training:
   # Training parameters
   batch_size: 1024
   learning_rate: 0.005
-  epochs: 50
+  epochs: 100
   # scheduler:
   #   name: "linear"
   #   args:
@@ -25,7 +25,7 @@ training:
   
 dataset:
   name: "sudoku"
-  path: "./data/sudoku"
+  path: "/var/scratch/dchernia/sudoku"
 
 model:
   name: "SudokuCNN"
