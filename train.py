@@ -54,8 +54,16 @@ def eval_model(model, dataloader, loss_fns, device, metrics):
         with torch.no_grad():
             inputs = inputs.to(device)
             targets = targets.to(device)
-            predictions = model(inputs)
-            loss_values = torch.tensor([loss['fn'](predictions, targets) * loss['weight'] for loss in loss_fns])
+            model_output = model(inputs)
+            
+            if isinstance(model_output, dict):
+                predictions = model_output['predictions']
+                expert_reps = model_output.get('expert_representations', None)
+            else:
+                predictions = model_output
+                expert_reps = None
+
+            loss_values = torch.tensor([loss['fn'](predictions, targets, **({"expert_reps": expert_reps})) * loss['weight'] for loss in loss_fns])
             results['loss'] += torch.sum(loss_values).item()
             results = run_metrics(predictions, targets, model, inputs, device, metrics, results)
             for i, loss in enumerate(loss_fns):
@@ -67,7 +75,7 @@ def eval_model(model, dataloader, loss_fns, device, metrics):
 
 def train_model(config):
     # Load environment variables
-    load_dotenv(dotenv_path='noisescaling/.env')
+    load_dotenv(dotenv_path='.env')
 
     # Set seed for reproducibility
     set_seed(config['training']['seed'])
@@ -90,18 +98,48 @@ def train_model(config):
 
     # Set up the scaler and aggregator
     scaler, aggregator = None, None
-    if config['model'].get('scaler', None):
-        scaler = get_model_by_name(config['model']['scaler']['name'], **config['model']['scaler']['args'])
-    if config['model'].get('aggregator', None):
-        aggregator = get_model_by_name(config['model']['aggregator']['name'], **config['model']['aggregator']['args'])
+    model_config = config['model']
+    injection_point = model_config.get('injection_point')
+
+
+    if model_config.get('scaler', None):
+        scaler_config = model_config['scaler']
+        scaler_args = scaler_config.get('args', {})
+
+        if injection_point is not None:
+            if injection_point == '0':
+                scaler_args['layer_type'] = 'conv'
+                scaler_args['dim'] = 256  # number of channels
+            elif injection_point == '1':
+                scaler_args['layer_type'] = 'conv'
+                scaler_args['dim'] = 512
+            elif injection_point == '2':
+                scaler_args['layer_type'] = 'conv'
+                scaler_args['dim'] = 512
+            elif injection_point == '3':
+                scaler_args['layer_type'] = 'conv'
+                scaler_args['dim'] = 1024
+            elif injection_point == '4':
+                scaler_args['layer_type'] = 'conv'
+                scaler_args['dim'] = 9
+
+            else:
+                raise ValueError(f"Unsupported injection_point: {injection_point}")
+            
+            logger.info(f"Using scaler at injection point: {injection_point} with args: {scaler_args}")
+        
+            scaler = get_model_by_name(scaler_config['name'], **scaler_args)
+
+    if model_config.get('aggregator', None):
+        aggregator = get_model_by_name(model_config['aggregator']['name'], **model_config['aggregator']['args'])
 
     # Get the model from the registry
-    model = get_model_by_name(config['model']['name'], scaler=scaler, aggregator=aggregator)
+    model = get_model_by_name(model_config['name'], scaler=scaler, aggregator=aggregator, injection_point=injection_point)
     logger.info(f"Model Architecture:\n{model}")
     # Load pretrained weights, if provided.
-    if config['model'].get('pretrained_path', None):
-        model.load_state_dict(torch.load(config['model']['pretrained_path']), strict=False)
-    
+    if model_config.get('pretrained_path', None):
+        model.load_state_dict(torch.load(model_config['pretrained_path']), strict=False)
+
     run.watch(model)
     
     num_trainable_params = count_trainable_parameters(model)
@@ -130,7 +168,7 @@ def train_model(config):
         else:
             raise ValueError(f"Scheduler {scheduler_config['name']} not supported.")
     # Get the loss function from the registry
-    loss_fns = [{'name': loss['name'], 'fn': LOSS_REGISTRY[loss['name']], 'weight': loss['weight']} for loss in config['model']['losses']]
+    loss_fns = [{'name': loss['name'], 'fn': LOSS_REGISTRY[loss['name']], 'weight': loss['weight']} for loss in model_config['losses']]
     model.compile()
     model.train()
     step = 0
@@ -138,9 +176,19 @@ def train_model(config):
         for _, (inputs, targets, _) in enumerate(tqdm(dataloaders['train'], desc='Training')):
             inputs = inputs.to(device)
             targets = targets.to(device)
-            predictions = model(inputs)
+                    
+            model_output = model(inputs)
+            #predictions = model(inputs)
+
+            if isinstance(model_output, dict):
+                predictions = model_output['predictions']
+                expert_reps = model_output.get('expert_representations', None)
+            else:
+                predictions = model_output
+                expert_reps = None
+
             # Multiple losses are summed up with corresponding coefficients
-            loss_values = torch.stack([loss['fn'](predictions, targets) * loss['weight'] for loss in loss_fns], dim=0)
+            loss_values = torch.stack([loss['fn'](predictions, targets, **({"expert_reps": expert_reps})) * loss['weight'] for loss in loss_fns], dim=0)
             loss = torch.sum(loss_values)
             loss.backward()
             optimizer.step()

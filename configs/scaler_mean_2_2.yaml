@@ -1,0 +1,32 @@
+training:
+  batch_size: 1024
+  num_workers: 4
+  learning_rate: 0.001
+  epochs: 20
+  eval_interval: 500
+  device: "cuda:0"
+  experiment_name: "sudoku-scaler-mean-2-2"
+  training_metrics: ["accuracy", "accuracy_sudoku"]
+  validation_metrics: ["accuracy", "accuracy_sudoku"]
+  seed: 42
+  scaler_regime: "full" # "partial" (only scaler and aggregator are trained) or "full" (all parameters are trained)
+
+dataset:
+  name: "sudoku"
+  path: "./data/sudoku"
+
+model:
+  name: "SudokuCNN"
+  injection_point: "2"
+  losses: [{"name": "sudoku_loss", "weight": 1.0}, 
+           #{"name": "orthonormality_loss", "weight": 0.05}
+           ]
+  pretrained_path: 
+  scaler:
+    name: "SudokuStaticScaler"
+    args:
+      n_transforms: 2
+  aggregator:
+    name: "MeanAggregator"
+    args:
+      aggregate_dim: 1

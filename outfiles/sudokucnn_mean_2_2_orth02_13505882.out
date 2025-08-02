@@ -1,0 +1,87 @@
+============================================================================================== 
+Warning! Mixing Conda and module environments may lead to corruption of the
+user environment. 
+We do not recommend users mixing those two environments unless absolutely
+necessary. Note that 
+SURF does not provide any support for Conda environment.
+For more information, please refer to our software policy page:
+https://servicedesk.surf.nl/wiki/display/WIKI/Software+policy+Snellius#SoftwarepolicySnellius-UseofAnacondaandMinicondaenvironmentsonSnellius 
+
+Remember that many packages have already been installed on the system and can
+be loaded using 
+the 'module load <package__name>' command. If you are uncertain if a package is
+already available 
+on the system, please use 'module avail' or 'module spider' to search for it.
+============================================================================================== 
+/home/mmazuryk1/.local/lib/python3.11/site-packages/pandas/core/arrays/masked.py:61: UserWarning: Pandas requires version '1.3.6' or newer of 'bottleneck' (version '1.3.5' currently installed).
+  from pandas.core import (
+wandb: Currently logged in as: michal-mazuryk (michal.mazuryk@student.uva.nl) to https://api.wandb.ai. Use `wandb login --relogin` to force relogin
+wandb: Tracking run with wandb version 0.20.1
+wandb: Run data is saved locally in /gpfs/home5/mmazuryk1/AGI/noisescaling/wandb/run-20250802_161141-ly6u05qe
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Syncing run sudoku-scaler-mean-2-2-orth-02
+wandb: ⭐️ View project at https://wandb.ai/michal.mazuryk%40student.uva.nl/noisescalling
+wandb: 🚀 View run at https://wandb.ai/michal.mazuryk%40student.uva.nl/noisescalling/runs/ly6u05qe
+sudoku-scaler-mean-2-2-orth-02 - INFO - Using scaler at injection point: 2 with args: {'n_transforms': 2, 'layer_type': 'conv', 'dim': 512}
+sudoku-scaler-mean-2-2-orth-02 - INFO - Model Architecture:
+SudokuCNN(
+  (scaler): SudokuStaticScaler(
+    (transformations): ModuleList(
+      (0): ConvBlock(
+        (conv): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=same)
+        (activation): ReLU()
+        (bn): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (1): Identity()
+    )
+  )
+  (aggregator): MeanAggregator()
+  (enc): Sequential(
+    (0): ConvBlock(
+      (conv): Conv2d(1, 128, kernel_size=(3, 3), stride=(1, 1), padding=same)
+      (activation): ReLU()
+      (bn): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    )
+    (1): ConvBlock(
+      (conv): Conv2d(128, 256, kernel_size=(3, 3), stride=(1, 1), padding=same)
+      (activation): ReLU()
+      (bn): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    )
+  )
+  (mid_1): ConvBlock(
+    (conv): Conv2d(256, 512, kernel_size=(3, 3), stride=(1, 1), padding=same)
+    (activation): ReLU()
+    (bn): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+  )
+  (mid_2): ConvBlock(
+    (conv): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=same)
+    (activation): ReLU()
+    (bn): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+  )
+  (mid_3): ConvBlock(
+    (conv): Conv2d(512, 1024, kernel_size=(3, 3), stride=(1, 1), padding=same)
+    (activation): ReLU()
+    (bn): BatchNorm2d(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+  )
+  (mid_4): ConvBlock(
+    (conv): Conv2d(1024, 9, kernel_size=(3, 3), stride=(1, 1), padding=same)
+    (activation): ReLU()
+    (bn): BatchNorm2d(9, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+  )
+  (flatten): Flatten(start_dim=1, end_dim=-1)
+  (dec): Sequential(
+    (0): LinearBlock(
+      (linear): Linear(in_features=729, out_features=512, bias=True)
+      (activation): ReLU()
+    )
+    (1): LinearBlock(
+      (linear): Linear(in_features=512, out_features=729, bias=True)
+      (activation): ReLU()
+    )
+    (2): LayerNorm((729,), eps=1e-05, elementwise_affine=True)
+    (3): Reshape()
+  )
+)
+sudoku-scaler-mean-2-2-orth-02 - INFO - Number of trainable parameters: 11753894
+Training:   0%|          | 0/1617 [00:00<?, ?it/s]/home/mmazuryk1/.local/lib/python3.11/site-packages/torch/_inductor/compile_fx.py:194: UserWarning: TensorFloat32 tensor cores for float32 matrix multiplication available but not enabled. Consider setting `torch.set_float32_matmul_precision('high')` for better performance.
+  warnings.warn(
