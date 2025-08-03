@@ -55,6 +55,12 @@ def eval_model(model, dataloader, loss_fns, device, metrics):
             inputs = inputs.to(device)
             targets = targets.to(device)
             predictions = model(inputs)
+            z, log_det = None, None
+            if isinstance(predictions, tuple) and len(predictions) == 3:
+                predictions, z, log_det = predictions
+            elif isinstance(predictions, tuple) and len(predictions) == 2:
+                predictions, log_det = predictions
+
             loss_values = torch.tensor([loss['fn'](predictions, targets) * loss['weight'] for loss in loss_fns])
             results['loss'] += torch.sum(loss_values).item()
             results = run_metrics(predictions, targets, model, inputs, device, metrics, results)
@@ -111,6 +117,11 @@ def train_model(config):
     device = torch.device(config['training'].get('device', 'cuda:0') if torch.cuda.is_available() else "cpu")
     model.to(device)
 
+    logger.info(f"Using device: {device}")
+    if torch.cuda.is_available():
+        logger.info(f"CUDA device name: {torch.cuda.get_device_name(device)}")
+        logger.info(f"CUDA device index: {torch.cuda.current_device()}")
+
     # Get the dataloaders
     dataloaders = get_dataloaders(config)
     
@@ -139,9 +150,24 @@ def train_model(config):
             inputs = inputs.to(device)
             targets = targets.to(device)
             predictions = model(inputs)
-            # Multiple losses are summed up with corresponding coefficients
+            z, log_det = None, None
+            if isinstance(predictions, tuple) and len(predictions) == 3:
+                predictions, z, log_det = predictions
+            elif isinstance(predictions, tuple) and len(predictions) == 2:
+                predictions, log_det = predictions
+
             loss_values = torch.stack([loss['fn'](predictions, targets) * loss['weight'] for loss in loss_fns], dim=0)
             loss = torch.sum(loss_values)
+
+            nll_loss = None
+            if log_det is not None and z is not None:
+                log_pz = -0.5 * (z ** 2 + torch.log(torch.tensor(2 * torch.pi, device=z.device)))
+                log_pz = log_pz.view(z.shape[0], z.shape[1], -1).sum(-1)  # (B, n_reps)
+                log_px = log_det + log_pz  # (B, n_reps)
+                num_elements = z.shape[2] * z.shape[3] * z.shape[4]  # C * H * W
+                nll_loss = -log_px.mean() / num_elements
+                nll_weight = config['model'].get('nll_weight', 1.0)
+                loss = loss + nll_weight * nll_loss
             loss.backward()
             optimizer.step()
             optimizer.zero_grad()
@@ -153,6 +179,9 @@ def train_model(config):
             for i, loss_fn in enumerate(loss_fns):
                 log_dict[loss_fn['name']] = loss_values[i].item()
             log_dict['loss'] = loss.item()
+            if nll_loss is not None:
+                log_dict['nll_loss'] = nll_loss.item()
+                log_dict['nll_weight'] = nll_weight
             if scheduler:
                 log_dict['lr'] = scheduler.get_last_lr()[0]
             else:

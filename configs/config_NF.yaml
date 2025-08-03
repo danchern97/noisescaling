@@ -1,15 +1,15 @@
 training:
-  batch_size: 128
+  batch_size: 1024
   num_workers: 4
   learning_rate: 0.001
-  epochs: 1
-  eval_interval: 12900
-  device: "cpu"
-  experiment_name: "sudoku-nf-mean-aggregator-partial"
+  epochs: 30
+  eval_interval: 500
+  device: "cuda:0"
+  experiment_name: "sudoku-nf"
   training_metrics: ["accuracy", "accuracy_sudoku"]
   validation_metrics: ["accuracy", "accuracy_sudoku"]
   seed: 42
-  scaler_regime: "partial"
+  scaler_regime: "full"
 
 dataset:
   name: "sudoku"
@@ -18,11 +18,13 @@ dataset:
 model:
   name: "SudokuCNN"
   losses: [{"name": "sudoku_loss", "weight": 1.0}]
+  nll_weight: 1.0  
+  #pretrained_path: "models_cache/sudoku-nf/model_24500.pt"
   scaler:
     name: "SudokuNormalizingFlowScaler"
     args:
-      n_coupling_layers: 2
-      hidden_dim: 32
+      n_coupling_layers: 4
+      hidden_dim: 64
       n_reps: 2
       n_coupling_net_layers: 2
   aggregator:

@@ -63,15 +63,22 @@ class SudokuCNN(nn.Module):
         )
 
     def forward(self, x):
+        log_det = None
+        z = None
         if self.scaler is not None and self.aggregator is not None:
             x = self.enc(x) # (B, 256, 9, 9)
-            x = self.scaler(x) # (B, n_reps, 256, 9, 9)
-            x = self.aggregator(torch.stack([self.mid(x[:, i]) for i in range(x.shape[1])], dim=1)) # (B, 1024)
-            x = self.dec(x) # (B, 9, 9, 9)
-            return x
+            scaler_out = self.scaler(x)
+            if isinstance(scaler_out, tuple):
+                z, log_det = scaler_out  # z: (B, n_reps, 256, 9, 9)
+        # x: (B, n_reps, 256, 9, 9)
+            agg = self.aggregator(torch.stack([self.mid(z[:, i]) for i in range(z.shape[1])], dim=1)) # (B, 1024)
+            predictions = self.dec(agg) # (B, 9, 9, 9)
+            if log_det is not None:
+                return predictions, z, log_det
+            else:
+                return predictions
         else:
             return self.dec(self.mid(self.enc(x)))
-
 @register_model("SudokuStaticScaler")
 class SudokuStaticScaler(StaticScaler):
     def __init__(self, n_transforms : int = 1, **kwargs):

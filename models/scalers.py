@@ -277,41 +277,77 @@ class GaussianMixtureScaler(StochasticScaler):
         gmm_samples = torch.sum(component_selection * component_samples, dim=2)  # (B, n_reps, *)
 
         return gmm_samples
-class SimpleCouplingLayer(nn.Module):
-    """
-    A single affine coupling layer for a normalizing flow.
 
-    This layer splits the input channels into two groups using a binary mask.
-    One group is left unchanged, while the other is transformed using an affine transformation
-    whose parameters are predicted by a neural network conditioned on the unchanged group.
 
-    The mask alternates between layers to ensure all channels are transformed across the stack.
+class ConcatELU(nn.Module):
+    def forward(self, x):
+        return torch.cat([F.elu(x), F.elu(-x)], dim=1)
 
-    Args:
-        c_in (int): Number of input channels.
-        hidden_dim (int): Number of hidden units in the coupling network.
-        mask_even (bool): If True, mask even channels; if False, mask odd channels.
-        n_layers (int): Number of layers in the coupling network.
-    """
-    def __init__(self, c_in, hidden_dim=64, mask_even=True, n_layers=3):
+class LayerNormChannels(nn.Module):
+    def __init__(self, c_in, eps=1e-5):
         super().__init__()
+        self.gamma = nn.Parameter(torch.ones(1, c_in, 1, 1))
+        self.beta = nn.Parameter(torch.zeros(1, c_in, 1, 1))
+        self.eps = eps
+    def forward(self, x):
+        mean = x.mean(dim=1, keepdim=True)
+        var = x.var(dim=1, unbiased=False, keepdim=True)
+        y = (x - mean) / torch.sqrt(var + self.eps)
+        y = y * self.gamma + self.beta
+        return y
 
-        layers = []
-        for i in range(n_layers):
-            in_ch = c_in if i == 0 else hidden_dim
-            layers.append(nn.Conv2d(in_ch, hidden_dim, 3, padding=1))
-            layers.append(nn.ReLU())
-        layers.append(nn.Conv2d(hidden_dim, 2 * c_in, 3, padding=1))
-        self.net = nn.Sequential(*layers)
+class GatedConv(nn.Module):
+    def __init__(self, c_in, c_hidden):
+        super().__init__()
+        self.net = nn.Sequential(
+            ConcatELU(),
+            nn.Conv2d(2*c_in, c_hidden, 3, padding=1),
+            ConcatELU(),
+            nn.Conv2d(2*c_hidden, 2*c_in, 1)
+        )
+    def forward(self, x):
+        out = self.net(x)
+        val, gate = out.chunk(2, dim=1)
+        return x + val * torch.sigmoid(gate)
 
-        mask = torch.zeros(1, c_in, 1, 1)
-        if mask_even:
-            mask[:, ::2] = 1
+class GatedConvNet(nn.Module):
+    def __init__(self, c_in, c_hidden=64, c_out=-1, num_layers=2):
+        super().__init__()
+        c_out = c_out if c_out > 0 else 2 * c_in
+        layers = [nn.Conv2d(c_in, c_hidden, 3, padding=1)]
+        for _ in range(num_layers):
+            layers += [GatedConv(c_hidden, c_hidden), LayerNormChannels(c_hidden)]
+        layers += [ConcatELU(), nn.Conv2d(2*c_hidden, c_out, 3, padding=1)]
+        self.nn = nn.Sequential(*layers)
+        nn.init.zeros_(self.nn[-1].weight)
+        nn.init.zeros_(self.nn[-1].bias)
+    def forward(self, x):
+        return self.nn(x)
+
+class SimpleCouplingLayer(nn.Module):
+
+    def create_checkerboard_mask(h, w, invert=False):
+        x, y = torch.arange(h), torch.arange(w)
+        xx, yy = torch.meshgrid(x, y, indexing='ij')
+        mask = ((xx + yy) % 2).float().view(1, 1, h, w)
+        if invert:
+            mask = 1 - mask
+        return mask
+
+    def __init__(self, c_in, hidden_dim=64, mask=None, mask_even=True, n_layers=2):
+        super().__init__()
+        self.net = GatedConvNet(c_in, hidden_dim, 2 * c_in, n_layers)
+        if mask is not None:
+            self.register_buffer('mask', mask.clone()) 
         else:
-            mask[:, 1::2] = 1
-        self.register_buffer('mask', mask)
+            mask = torch.zeros(1, c_in, 1, 1)
+            if mask_even:
+                mask[:, ::2] = 1
+            else:
+                mask[:, 1::2] = 1
+            self.register_buffer('mask', mask)
 
-    def forward(self, z, reverse=False):
+    def forward(self, z, reverse=False, return_log_det=False):
         mask = self.mask
         z1 = z * mask
         h = self.net(z1)
@@ -319,48 +355,48 @@ class SimpleCouplingLayer(nn.Module):
         s = torch.tanh(s)
         if not reverse:
             z2 = (z * (1 - mask) + t) * torch.exp(s * (1 - mask))
+            log_det = (s * (1 - mask)).view(z.shape[0], -1).sum(-1)
         else:
             z2 = (z * (1 - mask)) * torch.exp(-s * (1 - mask)) - t
-        return z1 + z2
+            log_det = -(s * (1 - mask)).view(z.shape[0], -1).sum(-1)
+        out = z1 + z2
+        if return_log_det:
+            return out, log_det
+        else:
+            return out
 
 class NormalizingFlowScaler(StochasticScaler):
-    """
-    Stochastic scaler using a stack of affine coupling layers as a normalizing flow.
 
-    This module generates multiple stochastic, invertible transformations of an input tensor
-    by sampling from a base distribution and passing the result through a sequence of
-    SimpleCouplingLayers. The flow is designed to increase the diversity and expressivity
-    of latent representations for downstream tasks.
-
-    Args:
-        n_coupling_layers (int): Number of coupling layers in the flow.
-        hidden_dim (int): Number of hidden units in each coupling layer's network.
-        n_reps (int): Number of stochastic representations to generate per input.
-        n_coupling_net_layers (int): Number of layers in each coupling network.
-        **kwargs: Additional arguments for the base class.
-    """
-
-    def __init__(self, n_coupling_layers=4, hidden_dim=64, n_reps=2, n_coupling_net_layers=3, **kwargs):
+    def __init__(self, n_coupling_layers=4, hidden_dim=64, n_reps=2, n_coupling_net_layers=3, H=9, W=9, **kwargs):
         super().__init__()
         self.n_reps = n_reps
-        self.c_in = 256  
+        self.c_in = 256  # adjust as needed
 
-        self.flow_layers = nn.ModuleList([
-            SimpleCouplingLayer(self.c_in, hidden_dim, mask_even=(i % 2 == 0), n_layers=n_coupling_net_layers)
-            for i in range(n_coupling_layers)
-        ])
+        self.flow_layers = nn.ModuleList()
+        for i in range(n_coupling_layers):
+            # Alternate checkerboard mask (invert every other layer)
+            mask = SimpleCouplingLayer.create_checkerboard_mask(H, W, invert=(i % 2 == 1))
+            mask = mask.to(torch.float32).to('cpu')  # or .to(device) if needed
+            # Expand mask to all channels
+            mask = mask.expand(1, self.c_in, H, W).clone()
+            self.flow_layers.append(
+                SimpleCouplingLayer(self.c_in, hidden_dim, mask=mask, n_layers=n_coupling_net_layers)
+            )
         self.base_dist = D.Normal(0, 1)
 
-    def forward(self, x: torch.Tensor, n_reps: int = None, **kwargs) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, n_reps: int = None, **kwargs):
         n_reps = n_reps or self.n_reps
         B, C, H, W = x.shape
         z = self.base_dist.sample((B, n_reps, C, H, W)).to(x.device)
         z = z + x.unsqueeze(1)
         z = z.view(B * n_reps, C, H, W)
+        sum_log_det = torch.zeros(z.shape[0], device=z.device)
         for flow in self.flow_layers:
-            z = flow(z)
+            z, log_det = flow(z, return_log_det=True)
+            sum_log_det += log_det
         z = z.view(B, n_reps, C, H, W)
-        return z
+        sum_log_det = sum_log_det.view(B, n_reps)
+        return z, sum_log_det
 
     def get_distribution(self, x: torch.Tensor, **kwargs):
         """
