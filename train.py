@@ -69,9 +69,7 @@ def eval_model(model, dataloader, loss_fns, device, metrics):
 
 def train_model(config, sweep_args=None):
     # Load environment variables
-    load_dotenv(dotenv_path='noisescaling/.env')
-
-    print(sweep_args)
+    load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '.env'))
     
     # Initialize wandb
     run_name = generate_run_name(config, sweep_args)
@@ -79,11 +77,17 @@ def train_model(config, sweep_args=None):
     # Update config with sweep parameters
     sweep_config = parse_sweep_args(sweep_args)
     config = update_config(config, sweep_config)
+    print(config)
+    if os.getenv('WANDB_DIR', None) is None:
+        raise ValueError("WANDB_DIR is not set. Please set it in the .env file.")
+    else:
+        print("WANDB_DIR is set to ", os.getenv('WANDB_DIR'))
 
     # Initialize wandb
     run = wandb.init(
-        project=os.getenv('WANDB_PROJECT'),
-        entity=os.getenv('WANDB_ENTITY'),
+        # project=os.getenv('WANDB_PROJECT'),
+        # entity=os.getenv('WANDB_ENTITY'),
+        dir=os.getenv('WANDB_DIR'),
         name=run_name,
         config=config
     )
@@ -151,11 +155,11 @@ def train_model(config, sweep_args=None):
         best_metric_value = float('-inf') if checkpoint_metric_config['mode'] == 'max' else float('inf')
         logger.info(f"Will save best model based on {checkpoint_metric_config['name']} ({checkpoint_metric_config['mode']})")
 
-    model.compile()
+    # model.compile()
     model.train()
     step = 0
     for epoch in range(config['training'].get('epochs', 100)):
-        for _, (inputs, targets, _) in enumerate(tqdm(dataloaders['train'], desc='Training')):
+        for _, (inputs, targets, _) in enumerate(tqdm(dataloaders['train'], desc='Training', mininterval=45)):
             inputs = inputs.to(device)
             targets = targets.to(device)
             predictions = model(inputs)
@@ -182,22 +186,24 @@ def train_model(config, sweep_args=None):
             run.log(log_dict)
             step += 1
 
-            if step % config['training'].get('eval_interval', 500) == 0 and 'validation' in dataloaders:
-                eval_results = eval_model(model, dataloaders['validation'], loss_fns, device, config['training']['validation_metrics'])
-                log_msg = f"Validation results at epoch {epoch}, step {step}: "
-                log_msg += ", ".join([f"{k}: {v:.4f}" for k, v in eval_results.items()])
-                logger.info(log_msg)
-                log_dict = {f"val/{k}": v for k, v in eval_results.items()}
-                run.log(log_dict)
-                
-                # Save model checkpoint
-                if checkpoint_metric_config:
-                    best_metric_value = save_best_model(model, model_dir, eval_results, checkpoint_metric_config, best_metric_value, logger, run)
-                else:
-                    # Save every time
-                    save_path = os.path.join(model_dir, f"model_{step}.pt")
-                    torch.save(model.state_dict(), save_path)
-                    run.save(save_path)
+        if 'validation' in dataloaders:
+            eval_results = eval_model(model, dataloaders['validation'], loss_fns, device, config['training']['validation_metrics'])
+            log_msg = f"Validation results at epoch {epoch}, step {step}: "
+            log_msg += ", ".join([f"{k}: {v:.4f}" for k, v in eval_results.items()])
+            logger.info(log_msg)
+            log_dict = {f"val/{k}": v for k, v in eval_results.items()}
+            log_dict['epoch'] = epoch
+            log_dict['step'] = step
+            run.log(log_dict)
+            
+            # Save model checkpoint
+            if checkpoint_metric_config:
+                best_metric_value = save_best_model(model, model_dir, eval_results, checkpoint_metric_config, best_metric_value, logger, run)
+            else:
+                # Save every time
+                save_path = os.path.join(model_dir, f"model_{step}.pt")
+                torch.save(model.state_dict(), save_path)
+                run.save(save_path)
 
                 model.train()
 

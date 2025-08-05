@@ -2,12 +2,12 @@
 
 PROJECT="noisescaling"
 ENTITY="m-d-cherniavskii-university-of-amsterdam"
-SWEEP_ID="hihq27bb"
+SWEEP_ID="sxis9iv6"
 
 N_AGENTS=3
-COUNT_PER_AGENT=4
+COUNT_PER_AGENT=5
 
-export MODELS_DIR=/var/scratch/dchernia/models_cache
+source .env
 
 for i in $(seq 0 $((N_AGENTS - 1))); do 
     echo "Starting agent $i"

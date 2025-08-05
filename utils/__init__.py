@@ -46,13 +46,18 @@ def parse_sweep_args(sweep_args):
             v = int(v)
         elif v.replace('.', '', 1).isdigit():
             v = float(v)
-        else:
-            v = str(v)
         
-        for key in k.split('.'):
-            config = config.setdefault(key, {})
-        config[k.split('.')[-1]] = v
+        keys = k.split('.')
+        set_nested_key(config, keys, v)
     return config
+
+def set_nested_key(d, keys, value):
+    """
+    Set a value in a nested dictionary using a list of keys.
+    """
+    for key in keys[:-1]:
+        d = d.setdefault(key, {})
+    d[keys[-1]] = value
 
 def update_config(config, u):
     """
