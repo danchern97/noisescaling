@@ -20,4 +20,4 @@ training:
   eval_interval: 100
   scaler_regime: "full"  # Train all parameters
   training_metrics: ["accuracy"]
-  validation_metrics: ["accuracy", "cross_entropy"] 
+  validation_metrics: ["accuracy"] 
