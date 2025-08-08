@@ -7,6 +7,8 @@ import argparse
 import wandb
 import os
 from dotenv import load_dotenv
+from collections import OrderedDict
+from huggingface_hub import hf_hub_download
 
 from data_processing import DATASET_REGISTRY, get_collate_fn
 from models import MODEL_REGISTRY, LOSS_REGISTRY
@@ -42,7 +44,45 @@ def run_metrics(predictions, targets, model, inputs, device, metrics, results=No
     for metric in metrics:
         results[metric] += METRIC_REGISTRY[metric](predictions=predictions, targets=targets, model=model, inputs=inputs, device=device).item()
     return results
+
+def load_state_dict(path, version=None):
     
+    saved_state_dict = torch.load(path)
+
+    if version:
+        
+        new_state_dict = OrderedDict()
+
+        if version == 'baseline':
+
+            for old_key, value in saved_state_dict.items():
+                
+                new_key = old_key
+
+                # --- CORE RENAMING LOGIC for the 'mid' layers ---
+                if old_key.startswith('mid.0.'):
+                    # Replace 'mid.0.' with 'mid_1.'
+                    new_key = old_key.replace('mid.0.', 'mid_1.', 1)
+                elif old_key.startswith('mid.1.'):
+                    # Replace 'mid.1.' with 'mid_2.'
+                    new_key = old_key.replace('mid.1.', 'mid_2.', 1)
+                elif old_key.startswith('mid.2.'):
+                    # Replace 'mid.2.' with 'mid_3.'
+                    new_key = old_key.replace('mid.2.', 'mid_3.', 1)
+                elif old_key.startswith('mid.3.'):
+                    # Replace 'mid.3.' with 'mid_4.'
+                    new_key = old_key.replace('mid.3.', 'mid_4.', 1)
+
+                print(f"Mapping '{old_key}' to '{new_key}'")
+                new_state_dict[new_key] = value
+
+        else:
+            raise ValueError(f"Version {version} not implemented to load state dict.")
+
+        saved_state_dict = new_state_dict
+
+    return saved_state_dict
+
 def eval_model(model, dataloader, loss_fns, device, metrics):
     model.eval()
     results = {metric: 0.0 for metric in metrics}
@@ -134,12 +174,22 @@ def train_model(config):
         aggregator = get_model_by_name(model_config['aggregator']['name'], **model_config['aggregator']['args'])
 
     # Get the model from the registry
-    model = get_model_by_name(model_config['name'], scaler=scaler, aggregator=aggregator, injection_point=injection_point)
+    model = get_model_by_name(model_config['name'], scaler=scaler, aggregator=aggregator, injection_point=injection_point, dropout=model_config.get('args', {}).get('dropout', 0.0))
     logger.info(f"Model Architecture:\n{model}")
     # Load pretrained weights, if provided.
     if model_config.get('pretrained_path', None):
-        model.load_state_dict(torch.load(model_config['pretrained_path']), strict=False)
+        
+        if model_config.get('pretrained_from_hf', None):
 
+            pretrained_path = hf_hub_download(repo_id=model_config['pretrained_from_hf'], filename=model_config['pretrained_path'])
+            logger.info(f"Loading pretrained weights from Hugging Face Hub: {pretrained_path}")
+        else:
+            pretrained_path = model_config['pretrained_path']
+
+        logger.info(f"Loading pretrained weights from {pretrained_path}")
+        state_dict = load_state_dict(pretrained_path, version=model_config.get('pretrained_version'))
+        model.load_state_dict(state_dict, strict=False)
+        
     run.watch(model)
     
     num_trainable_params = count_trainable_parameters(model)

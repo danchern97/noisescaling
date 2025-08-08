@@ -41,7 +41,7 @@ class LinearBlock(nn.Module):
 
 @register_model("SudokuCNN")
 class SudokuCNN(nn.Module):
-    def __init__(self, scaler: Optional[nn.Module] = None, aggregator: Optional[nn.Module] = None, injection_point: str = 'pre_dec', **kwargs):
+    def __init__(self, scaler: Optional[nn.Module] = None, aggregator: Optional[nn.Module] = None, injection_point: str = 'pre_dec', dropout: float = 0.0, **kwargs):
         """
         A flexible CNN for Sudoku with fine-grained expert injection points within the decoder.
 
@@ -90,6 +90,7 @@ class SudokuCNN(nn.Module):
         # --- Break up the decoder from nn.Sequential to allow for injection ---
         self.dec = nn.Sequential(
             LinearBlock(9*9*9, 512),
+            nn.Dropout(dropout),
             LinearBlock(512, 81 * 9),
             nn.LayerNorm(81 * 9),
             Reshape((-1, 9, 9, 9)),
