@@ -37,8 +37,30 @@ class LinearBlock(nn.Module):
 
     def forward(self, x):
         return self.activation(self.linear(x))
-       
 
+class ResidualBlock(nn.Module):
+    """
+    A simple wrapper that adds a residual connection around a transformation.
+    It computes: output = x + transform_block(x)
+    
+    Args:
+        transform_block (nn.Module): The module (e.g., a ConvBlock or LinearBlock)
+                                     that learns the residual modification.
+    """
+    def __init__(self, transform_block: nn.Module):
+        super().__init__()
+        self.transform_block = transform_block
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Applies the transformation and adds the input to the output.
+        """
+        # The 'transform_block' learns the modification to be made.
+        modification = self.transform_block(x)
+        
+        # Add the modification to the original input.
+        return x + modification
+        
 @register_model("SudokuCNN")
 class SudokuCNN(nn.Module):
     def __init__(self, scaler: Optional[nn.Module] = None, aggregator: Optional[nn.Module] = None, injection_point: str = 'pre_dec', dropout: float = 0.0, **kwargs):
@@ -166,12 +188,14 @@ class SudokuStaticScaler(StaticScaler):
         transformations = []
         for _ in range(n_transforms - 1):
             if layer_type == 'conv':
-                # Creates a transformation for convolutional feature maps
-                transformations.append(ConvBlock(in_channels=dim, out_channels=dim))
+                # This block learns the *change* to be applied to the input.
+                transform = ConvBlock(in_channels=dim, out_channels=dim)
             else: # layer_type == 'linear'
-                # Creates a transformation for flat vectors
-                transformations.append(LinearBlock(in_features=dim, out_features=dim))
-        
+                # This block learns the *change* to be applied to the input.
+                transform = LinearBlock(in_features=dim, out_features=dim)
+                
+            transformations.append(ResidualBlock(transform))
+
         # Always include the original, unmodified representation
         transformations.append(nn.Identity())
         
