@@ -3,9 +3,9 @@ training:
   num_workers: 4
   learning_rate: 0.001
   epochs: 20
-  eval_interval: 500
+  eval_interval: 10
   device: "cuda:0"
-  experiment_name: "sudoku-scaler-mean-2-2-orth-02"
+  experiment_name: "sudoku-scaler-mean-4-2-orth-01"
   training_metrics: ["accuracy", "accuracy_sudoku"]
   validation_metrics: ["accuracy", "accuracy_sudoku"]
   seed: 42
@@ -19,13 +19,13 @@ model:
   name: "SudokuCNN"
   injection_point: "2"
   losses: [{"name": "sudoku_loss", "weight": 1.0}, 
-           {"name": "orthonormality_loss", "weight": 0.2}
+           {"name": "orthonormality_loss", "weight": 0.1}
            ]
   pretrained_path: 
   scaler:
     name: "SudokuStaticScaler"
     args:
-      n_transforms: 2
+      n_transforms: 4
   aggregator:
     name: "MeanAggregator"
     args:
