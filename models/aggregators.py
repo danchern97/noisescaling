@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 from abc import ABC, abstractmethod
 from . import register_model
+import math 
+import torch.nn.functional as F
 
 class Aggregator(nn.Module, ABC):
     """
@@ -111,17 +113,17 @@ class AttentionAggregator(Aggregator):
         # Squeeze to get (B, d)
         return attn_output.squeeze(1)
 
+@register_model("CrossAttentionAggregator")
 class CrossAttentionAggregator(Aggregator):
     """
     Aggregates representations using a form of self-attention where the
-    query is the mean of all representations. This is a PyTorch implementation
-    inspired by the provided JAX cross-attention logic.
+    query is the mean of all representations.
     
     This aggregator has no learnable parameters itself.
     """
 
-    def __init__(self, **kwargs):
-        super().__init__()
+    def __init__(self, aggregate_dim : int = 1, **kwargs):
+        super().__init__(aggregate_dim, **kwargs)
 
     def forward(self, representations: torch.Tensor, dim: int = 1) -> torch.Tensor:
         """

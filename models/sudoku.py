@@ -201,6 +201,40 @@ class SudokuStaticScaler(StaticScaler):
         
         super().__init__(transformations, **kwargs)
 
+@register_model("WeightedMeanAggregator")
+class WeightedMeanAggregator(nn.Module):
+    """
+    Aggregates expert representations using a learnable weighted average.
+    Initialized to strongly favor the last expert (assumed to be the identity path).
+    """
+    def __init__(self, n_experts: int, initial_identity_bias: float = 10.0):
+        super().__init__()
+        # We create learnable logits for numerical stability
+        self.logits = nn.Parameter(torch.zeros(n_experts))
+        
+        # Initialize logits to favor the last expert
+        with torch.no_grad():
+            self.logits[-1] = initial_identity_bias
+
+    def forward(self, expert_reps: torch.Tensor) -> torch.Tensor:
+        """
+        Args:
+            expert_reps (torch.Tensor): Tensor of shape (B, n_reps, D)
+        
+        Returns:
+            torch.Tensor: Aggregated tensor of shape (B, D)
+        """
+        # Convert logits to weights that sum to 1
+        # (1, n_reps, 1) to allow for broadcasting
+        weights = F.softmax(self.logits, dim=0)[None, :, None]
+        
+        # Perform the weighted sum
+        # (B, n_reps, D) * (1, n_reps, 1) -> (B, n_reps, D)
+        # Then sum along the n_reps dimension
+        aggregated = (expert_reps * weights).sum(dim=1)
+        
+        return aggregated
+        
 @register_model("SudokuMLPAggregator")
 class SudokuMLPAggregator(Aggregator):
     def __init__(self, n_transforms : int = 1, **kwargs):
