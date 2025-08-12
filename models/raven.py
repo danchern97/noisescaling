@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 
 from . import register_model, register_loss, MODEL_REGISTRY
+from .scalers import StaticScaler
+from .aggregators import MeanAggregator
 
 # Ensure upstream RAVEN modules are importable regardless of CWD by adjusting sys.path
 import sys
@@ -57,15 +59,78 @@ class RavenResNet18(nn.Module):
 
         args = _ArgsShim(lr=lr, beta1=beta1, beta2=beta2, epsilon=epsilon, meta_alpha=meta_alpha, meta_beta=meta_beta)
         self.upstream = UpstreamResnet18MLP(args)
+        self.scaler = scaler
+        self.aggregator = aggregator
 
     def forward(self, inputs):
         images, embedding, indicator = inputs
-        # Upstream expects NHWC flattened to (B*?, 16, 224, 224) internally; it handles reshaping.
-        # It returns a tuple: (pred, meta_target_pred, meta_struct_pred)
-        pred, _, _ = self.upstream(images, embedding, indicator)
-        return pred
+        if self.scaler is not None and self.aggregator is not None:
+            # embeddings_reps: (B, n_reps, 6, 300)
+            embeddings_reps = self.scaler(embedding)
+            logits_list = []
+            for i in range(embeddings_reps.shape[1]):
+                # Ensure contiguity for upstream `.view` operations
+                emb_i = embeddings_reps[:, i].contiguous()
+                pred, _, _ = self.upstream(images.contiguous(), emb_i, indicator.contiguous())
+                logits_list.append(pred)
+            logits_stack = torch.stack(logits_list, dim=1)  # (B, n_reps, 8)
+            aggregated = self.aggregator(logits_stack)       # (B, 8)
+            return aggregated
+        else:
+            pred, _, _ = self.upstream(images, embedding, indicator)
+            return pred
 
 # Alias to match authors' model name in configs if desired
 MODEL_REGISTRY["Resnet18_MLP"] = RavenResNet18
 
 
+# -------------------------
+# Scaler for RAVEN embedding
+# -------------------------
+
+class _EmbeddingTransformBlock(nn.Module):
+    """
+    Small MLP that transforms each of the 6 vectors (dim=300) independently and returns the same shape.
+    Input:  (B, 6, 300)
+    Output: (B, 6, 300)
+    """
+    def __init__(self, input_dim: int = 300, hidden_dim: int = 300, dropout: float = 0.1):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.LayerNorm(input_dim),
+            nn.Linear(input_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(hidden_dim, input_dim),
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        b, n, d = x.shape
+        x_flat = x.reshape(b * n, d)
+        y_flat = self.net(x_flat)
+        return y_flat.reshape(b, n, d)
+
+
+@register_model("RavenEmbeddingStaticScaler")
+class RavenEmbeddingStaticScaler(StaticScaler):
+    """
+    Static scaler that produces multiple transformed versions of the 6x300 symbolic embedding
+    used by the RAVEN authors. Mirrors the Sudoku static scaler pattern.
+    """
+    def __init__(self, n_transforms: int = 1, hidden_dim: int = 300, dropout: float = 0.1, **kwargs):
+        transformations = [
+            _EmbeddingTransformBlock(input_dim=300, hidden_dim=hidden_dim, dropout=dropout)
+            for _ in range(max(0, n_transforms - 1))
+        ]
+        transformations.append(nn.Identity())
+        super().__init__(transformations)
+
+
+# -----------------------------
+# Aggregator for RAVEN logits
+# -----------------------------
+
+@register_model("RavenMeanAggregator")
+class RavenMeanAggregator(MeanAggregator):
+    def __init__(self, aggregate_dim: int = 1, **kwargs):
+        super().__init__(aggregate_dim=aggregate_dim, **kwargs)

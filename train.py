@@ -174,7 +174,9 @@ def train_model(config):
                 raise ValueError(f"Unsupported injection_point: {injection_point}")
             
             logger.info(f"Using scaler at injection point: {injection_point} with args: {scaler_args}")
-        
+            scaler = get_model_by_name(scaler_config['name'], **scaler_args)
+        else:
+            # Instantiate scaler without injection-specific args (e.g., for RAVEN embedding scaler)
             scaler = get_model_by_name(scaler_config['name'], **scaler_args)
 
     if model_config.get('aggregator', None):
@@ -213,6 +215,8 @@ def train_model(config):
     if config['training'].get('scaler_regime', None) == 'full' or config['training'].get('scaler_regime', None) is None:
         parameters = model.parameters()
     elif config['training'].get('scaler_regime', None) == 'partial':
+        if getattr(model, 'scaler', None) is None or getattr(model, 'aggregator', None) is None:
+            raise ValueError("scaler_regime 'partial' requires both model.scaler and model.aggregator to be set. Check your config.")
         parameters = list(model.scaler.parameters()) + list(model.aggregator.parameters())
     else:
         raise ValueError(f"Invalid scaler regime: {config['training']['scaler_regime']}. Supported regimes are 'full' and 'partial'.")
