@@ -16,6 +16,20 @@ from utils import count_trainable_parameters, set_seed
 from utils.logger import get_logger
 from utils.metrics import METRIC_REGISTRY
 from tqdm.auto import tqdm
+import glob
+
+def cleanup_checkpoints(model_dir, logger, keep_last=5):
+    checkpoints = sorted(
+        glob.glob(os.path.join(model_dir, "model_*.pt")),
+        key=os.path.getmtime
+    )
+    if len(checkpoints) > keep_last:
+        for ckpt in checkpoints[:-keep_last]:
+            try:
+                os.remove(ckpt)
+                logger.info(f"Deleted old checkpoint: {ckpt}")
+            except OSError as e:
+                logger.warning(f"Error deleting {ckpt}: {e}")
 
 def get_model_by_name(model_name : str, **kwargs):
     model_class = MODEL_REGISTRY[model_name]
@@ -197,7 +211,9 @@ def train_model(config):
 
         logger.info(f"Loading pretrained weights from {pretrained_path}")
         state_dict = load_state_dict(pretrained_path, version=model_config.get('pretrained_version'))
-        model.load_state_dict(state_dict, strict=False)
+        missing, unexpected = model.load_state_dict(state_dict, strict=False)
+        print("Missing keys:", missing)
+        print("Unexpected keys:", unexpected)
         
     run.watch(model)
     
@@ -218,6 +234,7 @@ def train_model(config):
         if getattr(model, 'scaler', None) is None or getattr(model, 'aggregator', None) is None:
             raise ValueError("scaler_regime 'partial' requires both model.scaler and model.aggregator to be set. Check your config.")
         parameters = list(model.scaler.parameters()) + list(model.aggregator.parameters())
+
     else:
         raise ValueError(f"Invalid scaler regime: {config['training']['scaler_regime']}. Supported regimes are 'full' and 'partial'.")
     optimizer = AdamW(parameters, lr=config['training'].get('learning_rate', 0.001))
@@ -231,10 +248,28 @@ def train_model(config):
     # Get the loss function from the registry
     loss_fns = [{'name': loss['name'], 'fn': LOSS_REGISTRY[loss['name']], 'weight': loss['weight']} for loss in model_config['losses']]
     model.compile()
+
+    eval_results = eval_model(model, dataloaders['validation'], loss_fns, device, config['training']['validation_metrics'])
+    log_msg = f"Validation results at the beginning: "
+    log_msg += ", ".join([f"{k}: {v:.4f}" for k, v in eval_results.items()])
+    logger.info(log_msg)
+    log_dict = {f"val/{k}": v for k, v in eval_results.items()}
+    run.log(log_dict)
+
+
     model.train()
     step = 0
     for epoch in range(config['training'].get('epochs', 100)):
         for _, (inputs, targets, _) in enumerate(tqdm(dataloaders['train'], desc='Training')):
+            
+            # 2. THE FIX: If in partial regime, selectively set baseline modules to eval mode
+            if config['training'].get('scaler_regime', None) == 'partial':
+                if hasattr(model, 'enc'): model.enc.eval()
+                if hasattr(model, 'mid_1'): model.mid_1.eval()
+                if hasattr(model, 'mid_2'): model.mid_2.eval()
+                if hasattr(model, 'mid_3'): model.mid_3.eval()
+                if hasattr(model, 'mid_4'): model.mid_4.eval()
+                if hasattr(model, 'dec'): model.dec.eval()
 
             # if inputs is a tuple pass all of them to device
             if isinstance(inputs, tuple):
@@ -243,6 +278,7 @@ def train_model(config):
                 inputs = [inp.to(device) for inp in inputs]
             else:
                 inputs = inputs.to(device)
+
             targets = targets.to(device)
                     
             model_output = model(inputs)
@@ -290,6 +326,8 @@ def train_model(config):
                 model_path = os.path.join(model_dir, f"model_{step}.pt")
                 torch.save(model.state_dict(), model_path)
                 run.save(model_path)
+                # Delete old checkpoints
+                cleanup_checkpoints(model_dir, logger, keep_last=5)
 
                 model.train()
 

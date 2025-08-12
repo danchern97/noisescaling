@@ -77,6 +77,8 @@ class SudokuCNN(nn.Module):
         self.scaler = scaler
         self.aggregator = aggregator
 
+        # self.alpha = 0.0  # start using only baseline path
+
         # --- Define the valid injection points within the decoder ---
         self.allowed_injection_points: List[str] = [
             '0',  # After encoder
@@ -132,7 +134,8 @@ class SudokuCNN(nn.Module):
             return {'predictions': final_preds}
 
         # --- Case 2: Experts are used. ---
-        
+        # alpha = getattr(self, 'alpha', 1.0)  # default full use if not set externally
+
         # Start with the tensor at the point *before* the injection
         if self.injection_point == '0':
             x = x_enc
@@ -162,9 +165,14 @@ class SudokuCNN(nn.Module):
 
         final_preds = self.dec(x)
 
+        # baseline_path = self.flatten(self.mid_4(self.mid_3(self.mid_2(self.mid_1(x_enc)))))
+        # baseline_preds = self.dec(baseline_path)
+        # # blend outputs
+        # blended_preds = (1 - alpha) * baseline_preds + alpha * final_preds
+
         return {
             'predictions': final_preds,
-            'expert_representations': expert_reps # Pass the scaler output
+            'expert_representations': expert_reps
         }
 
 
@@ -186,19 +194,25 @@ class SudokuStaticScaler(StaticScaler):
             raise ValueError(f"Invalid layer_type '{layer_type}'. Must be 'conv' or 'linear'.")
 
         transformations = []
+        dropout_p = kwargs.pop('dropout', 0.5)  # default 50%, can pass via scaler args
+
         for _ in range(n_transforms - 1):
             if layer_type == 'conv':
-                # This block learns the *change* to be applied to the input.
-                transform = ConvBlock(in_channels=dim, out_channels=dim)
-            else: # layer_type == 'linear'
-                # This block learns the *change* to be applied to the input.
-                transform = LinearBlock(in_features=dim, out_features=dim)
-                
-            transformations.append(ResidualBlock(transform))
+                block = nn.Sequential(
+                    ConvBlock(in_channels=dim, out_channels=dim),
+                    nn.Dropout2d(p=dropout_p)  # spatial dropout for conv
+                )
+            else:  # layer_type == 'linear'
+                block = nn.Sequential(
+                    LinearBlock(in_features=dim, out_features=dim),
+                    nn.Dropout(p=dropout_p)  # regular dropout for linear
+                )
+
+            transformations.append(ResidualBlock(block))
 
         # Always include the original, unmodified representation
         transformations.append(nn.Identity())
-        
+
         super().__init__(transformations, **kwargs)
 
 @register_model("WeightedMeanAggregator")

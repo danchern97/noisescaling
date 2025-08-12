@@ -3,7 +3,7 @@ training:
   num_workers: 4
   batch_size: 256
   learning_rate: 0.00056
-  epochs: 10
+  epochs: 1
   eval_interval: 500
   device: "cuda:0"
   experiment_name: "sudoku-b-scaler-res-mean-2-0"
