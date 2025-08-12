@@ -1,0 +1,124 @@
+============================================================================================== 
+Warning! Mixing Conda and module environments may lead to corruption of the
+user environment. 
+We do not recommend users mixing those two environments unless absolutely
+necessary. Note that 
+SURF does not provide any support for Conda environment.
+For more information, please refer to our software policy page:
+https://servicedesk.surf.nl/wiki/display/WIKI/Software+policy+Snellius#SoftwarepolicySnellius-UseofAnacondaandMinicondaenvironmentsonSnellius 
+
+Remember that many packages have already been installed on the system and can
+be loaded using 
+the 'module load <package__name>' command. If you are uncertain if a package is
+already available 
+on the system, please use 'module avail' or 'module spider' to search for it.
+============================================================================================== 
+/home/mmazuryk1/.local/lib/python3.11/site-packages/pandas/core/arrays/masked.py:61: UserWarning: Pandas requires version '1.3.6' or newer of 'bottleneck' (version '1.3.5' currently installed).
+  from pandas.core import (
+wandb: Currently logged in as: michal-mazuryk (michal.mazuryk@student.uva.nl) to https://api.wandb.ai. Use `wandb login --relogin` to force relogin
+wandb: Tracking run with wandb version 0.20.1
+wandb: Run data is saved locally in /gpfs/home5/mmazuryk1/AGI/noisescaling/wandb/run-20250804_004323-viv3w6gv
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Syncing run sudoku-scaler-mean-8-2-orth-01
+wandb: ⭐️ View project at https://wandb.ai/michal.mazuryk%40student.uva.nl/noisescalling
+wandb: 🚀 View run at https://wandb.ai/michal.mazuryk%40student.uva.nl/noisescalling/runs/viv3w6gv
+sudoku-scaler-mean-8-2-orth-01 - INFO - Using scaler at injection point: 2 with args: {'n_transforms': 8, 'layer_type': 'conv', 'dim': 512}
+sudoku-scaler-mean-8-2-orth-01 - INFO - Model Architecture:
+SudokuCNN(
+  (scaler): SudokuStaticScaler(
+    (transformations): ModuleList(
+      (0-6): 7 x ConvBlock(
+        (conv): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=same)
+        (activation): ReLU()
+        (bn): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (7): Identity()
+    )
+  )
+  (aggregator): MeanAggregator()
+  (enc): Sequential(
+    (0): ConvBlock(
+      (conv): Conv2d(1, 128, kernel_size=(3, 3), stride=(1, 1), padding=same)
+      (activation): ReLU()
+      (bn): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    )
+    (1): ConvBlock(
+      (conv): Conv2d(128, 256, kernel_size=(3, 3), stride=(1, 1), padding=same)
+      (activation): ReLU()
+      (bn): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    )
+  )
+  (mid_1): ConvBlock(
+    (conv): Conv2d(256, 512, kernel_size=(3, 3), stride=(1, 1), padding=same)
+    (activation): ReLU()
+    (bn): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+  )
+  (mid_2): ConvBlock(
+    (conv): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=same)
+    (activation): ReLU()
+    (bn): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+  )
+  (mid_3): ConvBlock(
+    (conv): Conv2d(512, 1024, kernel_size=(3, 3), stride=(1, 1), padding=same)
+    (activation): ReLU()
+    (bn): BatchNorm2d(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+  )
+  (mid_4): ConvBlock(
+    (conv): Conv2d(1024, 9, kernel_size=(3, 3), stride=(1, 1), padding=same)
+    (activation): ReLU()
+    (bn): BatchNorm2d(9, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+  )
+  (flatten): Flatten(start_dim=1, end_dim=-1)
+  (dec): Sequential(
+    (0): LinearBlock(
+      (linear): Linear(in_features=729, out_features=512, bias=True)
+      (activation): ReLU()
+    )
+    (1): LinearBlock(
+      (linear): Linear(in_features=512, out_features=729, bias=True)
+      (activation): ReLU()
+    )
+    (2): LayerNorm((729,), eps=1e-05, elementwise_affine=True)
+    (3): Reshape()
+  )
+)
+sudoku-scaler-mean-8-2-orth-01 - INFO - Number of trainable parameters: 25918886
+Training:   0%|          | 0/1617 [00:00<?, ?it/s]/home/mmazuryk1/.local/lib/python3.11/site-packages/torch/_inductor/compile_fx.py:194: UserWarning: TensorFloat32 tensor cores for float32 matrix multiplication available but not enabled. Consider setting `torch.set_float32_matmul_precision('high')` for better performance.
+  warnings.warn(
+Training:   0%|          | 1/1617 [00:33<15:06:58, 33.67s/it]Training:   0%|          | 1/1617 [00:33<15:14:06, 33.94s/it]
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/gpfs/home5/mmazuryk1/AGI/noisescaling/train.py", line 246, in <module>
+    train_model(config)
+  File "/gpfs/home5/mmazuryk1/AGI/noisescaling/train.py", line 191, in train_model
+    loss_values = torch.stack([loss['fn'](predictions, targets, **({"expert_reps": expert_reps})) * loss['weight'] for loss in loss_fns], dim=0)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/gpfs/home5/mmazuryk1/AGI/noisescaling/train.py", line 191, in <listcomp>
+    loss_values = torch.stack([loss['fn'](predictions, targets, **({"expert_reps": expert_reps})) * loss['weight'] for loss in loss_fns], dim=0)
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/gpfs/home5/mmazuryk1/AGI/noisescaling/models/sudoku.py", line 267, in orthonormality_loss
+    loss = d * F.mse_loss(covariance, identity)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mmazuryk1/.local/lib/python3.11/site-packages/torch/nn/functional.py", line 3905, in mse_loss
+    return torch._C._nn.mse_loss(
+           ^^^^^^^^^^^^^^^^^^^^^^
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 8.00 GiB. GPU 0 has a total capacity of 39.49 GiB of which 7.02 GiB is free. Including non-PyTorch memory, this process has 32.46 GiB memory in use. Of the allocated memory 24.65 GiB is allocated by PyTorch, and 7.31 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
+[1;34mwandb[0m: 
+[1;34mwandb[0m: 🚀 View run [33msudoku-scaler-mean-8-2-orth-01[0m at: [34mhttps://wandb.ai/michal.mazuryk%40student.uva.nl/noisescalling/runs/viv3w6gv[0m
+[1;34mwandb[0m: Find logs at: [1;35mwandb/run-20250804_004323-viv3w6gv/logs[0m
+
+JOB STATISTICS
+==============
+Job ID: 13537627
+Cluster: snellius
+User/Group: mmazuryk1/mmazuryk1
+State: RUNNING
+Nodes: 1
+Cores per node: 18
+CPU Utilized: 00:00:00
+CPU Efficiency: 0.00% of 00:17:24 core-walltime
+Job Wall-clock time: 00:00:58
+Memory Utilized: 0.00 MB
+Memory Efficiency: 0.00% of 120.00 GB (120.00 GB/node)
+WARNING: Efficiency statistics can only be obtained after the job has ended as seff tool is based on the accounting database data.
