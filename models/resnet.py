@@ -170,7 +170,6 @@ class ResNet(nn.Module):
         width_per_group: int = 64,
         replace_stride_with_dilation: Optional[List[bool]] = None,
         norm_layer: Optional[Callable[..., nn.Module]] = None,
-        return_embedding: bool = False,
     ) -> None:
         super().__init__()
         if norm_layer is None:
@@ -190,7 +189,6 @@ class ResNet(nn.Module):
             )
         self.groups = groups
         self.base_width = width_per_group
-        self.return_embedding = return_embedding
         self.conv1 = nn.Conv2d(3, self.inplanes, kernel_size=7, stride=2, padding=3, bias=False)
         self.bn1 = norm_layer(self.inplanes)
         self.relu = nn.ReLU(inplace=True)
@@ -200,8 +198,7 @@ class ResNet(nn.Module):
         self.layer3 = self._make_layer(block, 256, layers[2], stride=2, dilate=replace_stride_with_dilation[1])
         self.layer4 = self._make_layer(block, 512, layers[3], stride=2, dilate=replace_stride_with_dilation[2])
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        if not return_embedding:
-            self.fc = nn.Linear(512 * block.expansion, num_classes)
+        self.fc = nn.Linear(512 * block.expansion, num_classes)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -275,10 +272,8 @@ class ResNet(nn.Module):
 
         x = self.avgpool(x)
         x = torch.flatten(x, 1)
-        
-        if self.return_embedding:
-            return x
         x = self.fc(x)
+
         return x
 
     def forward(self, x: Tensor) -> Tensor:
@@ -296,11 +291,7 @@ def _resnet(
     model = ResNet(block, layers, **kwargs)
     if pretrained:
         state_dict = load_state_dict_from_url(model_urls[arch], progress=progress)
-
-        if kwargs.get('return_embedding', False):
-            state_dict = {k: v for k, v in state_dict.items() if not k.startswith('fc.')}
         model.load_state_dict(state_dict)
-
     return model
 
 
@@ -311,7 +302,6 @@ def resnet18(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
-        return_embedding (bool): If True, returns embeddings instead of classification logits
     """
     return _resnet("resnet18", BasicBlock, [2, 2, 2, 2], pretrained, progress, **kwargs)
 
@@ -323,7 +313,6 @@ def resnet34(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
-        return_embedding (bool): If True, returns embeddings instead of classification logits
     """
     return _resnet("resnet34", BasicBlock, [3, 4, 6, 3], pretrained, progress, **kwargs)
 
@@ -335,7 +324,6 @@ def resnet50(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
-        return_embedding (bool): If True, returns embeddings instead of classification logits
     """
     return _resnet("resnet50", Bottleneck, [3, 4, 6, 3], pretrained, progress, **kwargs)
 
@@ -347,7 +335,6 @@ def resnet101(pretrained: bool = False, progress: bool = True, **kwargs: Any) ->
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
-        return_embedding (bool): If True, returns embeddings instead of classification logits
     """
     return _resnet("resnet101", Bottleneck, [3, 4, 23, 3], pretrained, progress, **kwargs)
 
@@ -359,7 +346,6 @@ def resnet152(pretrained: bool = False, progress: bool = True, **kwargs: Any) ->
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
-        return_embedding (bool): If True, returns embeddings instead of classification logits
     """
     return _resnet("resnet152", Bottleneck, [3, 8, 36, 3], pretrained, progress, **kwargs)
 
@@ -371,7 +357,6 @@ def resnext50_32x4d(pretrained: bool = False, progress: bool = True, **kwargs: A
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
-        return_embedding (bool): If True, returns embeddings instead of classification logits
     """
     kwargs["groups"] = 32
     kwargs["width_per_group"] = 4
@@ -385,7 +370,6 @@ def resnext101_32x8d(pretrained: bool = False, progress: bool = True, **kwargs: 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
-        return_embedding (bool): If True, returns embeddings instead of classification logits
     """
     kwargs["groups"] = 32
     kwargs["width_per_group"] = 8
@@ -403,7 +387,6 @@ def wide_resnet50_2(pretrained: bool = False, progress: bool = True, **kwargs: A
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
-        return_embedding (bool): If True, returns embeddings instead of classification logits
     """
     kwargs["width_per_group"] = 64 * 2
     return _resnet("wide_resnet50_2", Bottleneck, [3, 4, 6, 3], pretrained, progress, **kwargs)
@@ -420,7 +403,6 @@ def wide_resnet101_2(pretrained: bool = False, progress: bool = True, **kwargs: 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
-        return_embedding (bool): If True, returns embeddings instead of classification logits
     """
     kwargs["width_per_group"] = 64 * 2
     return _resnet("wide_resnet101_2", Bottleneck, [3, 4, 23, 3], pretrained, progress, **kwargs)
