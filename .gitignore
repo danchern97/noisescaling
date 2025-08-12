@@ -7,6 +7,7 @@ data/
 .idea/*
 pretrained_models
 logs
+outfiles
 wandb
 cmllogs
 .DS_Store
@@ -29,7 +30,7 @@ helpers/data/
 plots/
 launch/my_launch/
 output_default
-
+todo.txt
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
