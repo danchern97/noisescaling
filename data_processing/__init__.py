@@ -5,6 +5,24 @@ from .iravendataset import IRavenDataset
 from torchvision import transforms
 
 
+# Make upstream RAVEN modules importable regardless of CWD by adding their path
+import sys
+from pathlib import Path
+_this = Path(__file__).resolve()
+_arc_root = _this.parents[2]
+_raven_model_dir = _arc_root / 'RAVEN' / 'src' / 'model'
+if str(_raven_model_dir) not in sys.path:
+    sys.path.insert(0, str(_raven_model_dir))
+
+# Try importing upstream dataset utilities
+try:
+    from utility.dataset_utility import dataset as RAVENUpstreamDataset  # type: ignore
+    from utility.dataset_utility import ToTensor as RAVENToTensor  # type: ignore
+except Exception:
+    RAVENUpstreamDataset = None
+    RAVENToTensor = None
+
+
 DATASET_REGISTRY = {}
 COLLATE_FN_REGISTRY = {}
 
@@ -108,6 +126,66 @@ def collate_fn_iraven(batch):
     inputs = (context_batch, pairs_batch, answers_batch)
     
     return inputs, targets_batch, metadata 
+
+
+# -------------------------------
+# RAVEN (authors' format) dataset
+# -------------------------------
+
+@register_collate_fn("raven")
+def collate_fn_raven(batch):
+    """
+    Collate function for the upstream RAVEN dataset.
+
+    Each sample is a tuple: (images, target, meta_target, meta_structure, embedding, indicator)
+    - images: Tensor of shape (16, H, W)
+    - target: int label in [0, 7]
+    - embedding: Tensor of shape (6, 300)
+    - indicator: Tensor of shape (1,)
+    We assemble inputs as a tuple (images, embedding, indicator) to be unpacked by the model.
+    """
+    images = torch.stack([sample[0] for sample in batch], dim=0)           # (B, 16, H, W)
+    targets = torch.tensor([int(sample[1]) for sample in batch], dtype=torch.long)
+    meta_targets = [sample[2] for sample in batch]
+    meta_structures = [sample[3] for sample in batch]
+    embeddings = torch.stack([sample[4] for sample in batch], dim=0)       # (B, 6, 300)
+    indicators = torch.stack([sample[5] for sample in batch], dim=0)       # (B, 1)
+
+    inputs = (images, embeddings, indicators)
+    metadata = {
+        'meta_target': meta_targets,
+        'meta_structure': meta_structures,
+    }
+    return inputs, targets, metadata
+
+
+@register_dataset("raven")
+def load_raven(cache_dir, img_size: int = 224, **kwargs) -> DatasetDict:
+    """
+    Loads the upstream RAVEN dataset using the authors' dataset utility.
+
+    Args:
+        cache_dir: Root directory of RAVEN where subfolders per configuration exist and `embedding.npy` is present.
+        img_size: Target image size (resizing is applied by the upstream dataset loader).
+    Returns:
+        DatasetDict with `train`, `validation`, `test` splits.
+    """
+    if RAVENUpstreamDataset is None:
+        raise ImportError("RAVEN upstream dataset code is not available. Ensure the RAVEN repo exists and is importable.")
+
+    # The upstream dataset expects a `transform` that converts numpy arrays to tensors
+    transform = transforms.Compose([RAVENToTensor()]) if RAVENToTensor is not None else None
+
+    # Initialize upstream datasets for each split. The upstream class filters by filename containing the split name.
+    train = RAVENUpstreamDataset(cache_dir, "train", img_size, transform=transform)
+    val = RAVENUpstreamDataset(cache_dir, "val", img_size, transform=transform)
+    test = RAVENUpstreamDataset(cache_dir, "test", img_size, transform=transform)
+
+    return DatasetDict({
+        'train': train,
+        'validation': val,
+        'test': test,
+    })
 
 
 @register_dataset("iraven")

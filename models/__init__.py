@@ -21,3 +21,5 @@ from . import sudoku
 from . import resnet
 from . import aggregators
 from . import iraven
+# RAVEN authors' model wrapper is registered in a new module
+from . import raven

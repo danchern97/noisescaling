@@ -1,0 +1,25 @@
+dataset:
+  name: "raven"
+  path: "/home/wkosiuk/ARC/RAVEN/data"  # Root containing config subfolders and embedding.npy
+
+model:
+  name: "raven_resnet18"
+  pretrained_path: null
+  losses:
+    - name: "raven_cross_entropy"
+      weight: 1.0
+
+training:
+  experiment_name: "raven_resnet18_authors"
+  device: "cuda:0"
+  batch_size: 16
+  learning_rate: 0.0001
+  epochs: 1
+  seed: 42
+  num_workers: 4
+  eval_interval: 200
+  scaler_regime: "full"
+  training_metrics: ["accuracy"]
+  validation_metrics: ["accuracy"]
+
+

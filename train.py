@@ -54,6 +54,8 @@ def eval_model(model, dataloader, loss_fns, device, metrics):
             # if inputs is a tuple pass all of them to device
             if isinstance(inputs, tuple):
                 inputs = tuple(inp.to(device) for inp in inputs)
+            elif isinstance(inputs, list):
+                inputs = [inp.to(device) for inp in inputs]
             else:
                 inputs = inputs.to(device)
             targets = targets.to(device)
@@ -84,6 +86,7 @@ def train_model(config):
     os.makedirs(model_dir, exist_ok=True)
 
     # Initialize wandb
+    wandb.login(key=os.getenv('WANDB_API_KEY'))
     run = wandb.init(
         project=os.getenv('WANDB_PROJECT'),
         entity=os.getenv('WANDB_ENTITY'),
