@@ -60,7 +60,13 @@ def eval_model(model, dataloader, loss_fns, device, metrics):
     
     for inputs, targets, metadata in dataloader:
         with torch.no_grad():
-            inputs = inputs.to(device)
+            # if inputs is a tuple pass all of them to device
+            if isinstance(inputs, tuple):
+                inputs = tuple(inp.to(device) for inp in inputs)
+            elif isinstance(inputs, list):
+                inputs = [inp.to(device) for inp in inputs]
+            else:
+                inputs = inputs.to(device)
             targets = targets.to(device)
             predictions = model(inputs)
             loss_values = torch.tensor([loss['fn'](predictions, targets) * loss['weight'] for loss in loss_fns])

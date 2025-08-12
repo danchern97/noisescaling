@@ -20,3 +20,5 @@ def register_loss(name):
 from . import sudoku
 from . import resnet
 from . import aggregators
+# RAVEN authors' model wrapper is registered in a new module
+from . import raven

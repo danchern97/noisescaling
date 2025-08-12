@@ -106,7 +106,13 @@ def eval_model(model, dataloader, loss_fns, device, metrics):
     
     for inputs, targets, metadata in dataloader:
         with torch.no_grad():
-            inputs = inputs.to(device)
+            # if inputs is a tuple pass all of them to device
+            if isinstance(inputs, tuple):
+                inputs = tuple(inp.to(device) for inp in inputs)
+            elif isinstance(inputs, list):
+                inputs = [inp.to(device) for inp in inputs]
+            else:
+                inputs = inputs.to(device)
             targets = targets.to(device)
             model_output = model(inputs)
             
@@ -143,6 +149,7 @@ def train_model(config):
     os.makedirs(model_dir, exist_ok=True)
 
     # Initialize wandb
+    wandb.login(key=os.getenv('WANDB_API_KEY'))
     run = wandb.init(
         project=os.getenv('WANDB_PROJECT'),
         entity=os.getenv('WANDB_ENTITY'),
@@ -181,7 +188,9 @@ def train_model(config):
                 raise ValueError(f"Unsupported injection_point: {injection_point}")
             
             logger.info(f"Using scaler at injection point: {injection_point} with args: {scaler_args}")
-        
+            scaler = get_model_by_name(scaler_config['name'], **scaler_args)
+        else:
+            # Instantiate scaler without injection-specific args (e.g., for RAVEN embedding scaler)
             scaler = get_model_by_name(scaler_config['name'], **scaler_args)
 
     if model_config.get('aggregator', None):
@@ -222,6 +231,8 @@ def train_model(config):
     if config['training'].get('scaler_regime', None) == 'full' or config['training'].get('scaler_regime', None) is None:
         parameters = model.parameters()
     elif config['training'].get('scaler_regime', None) == 'partial':
+        if getattr(model, 'scaler', None) is None or getattr(model, 'aggregator', None) is None:
+            raise ValueError("scaler_regime 'partial' requires both model.scaler and model.aggregator to be set. Check your config.")
         parameters = list(model.scaler.parameters()) + list(model.aggregator.parameters())
 
     else:
@@ -260,7 +271,14 @@ def train_model(config):
                 if hasattr(model, 'mid_4'): model.mid_4.eval()
                 if hasattr(model, 'dec'): model.dec.eval()
 
-            inputs = inputs.to(device)
+            # if inputs is a tuple pass all of them to device
+            if isinstance(inputs, tuple):
+                inputs = tuple(inp.to(device) for inp in inputs)
+            elif isinstance(inputs, list):
+                inputs = [inp.to(device) for inp in inputs]
+            else:
+                inputs = inputs.to(device)
+
             targets = targets.to(device)
                     
             model_output = model(inputs)
