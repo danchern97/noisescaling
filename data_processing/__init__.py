@@ -1,7 +1,6 @@
 import torch
 from datasets import load_dataset, DatasetDict, ClassLabel, Value
 from torch.utils.data import Subset
-from .iravendataset import IRavenDataset
 from torchvision import transforms
 
 
