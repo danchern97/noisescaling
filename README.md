@@ -116,3 +116,57 @@ def get_my_metric(predictions, targets, **kwargs):
     return score
 ```
 To use your new metric, add its registered name to the `metrics` list in your `config.yaml`.
+
+
+
+## RAVEN
+
+If you want to train/evaluate on the RAVEN dataset:
+
+1. Clone the dataset
+
+   ```bash
+   git clone https://github.com/wojciechkosiuk/RAVEN
+   cd RAVEN
+   ```
+
+2. Create and activate a virtual environment
+
+   ```bash
+   python -m venv venv
+   source venv/bin/activate
+   pip install -r requirements.txt
+   ```
+
+3. Prepare the dataset
+
+   ```bash
+   mkdir -p data
+   cp assets/embeddings.npy data/embeddings.npy
+   ```
+
+   - Generate the dataset locally:
+     ```bash
+     python src/dataset/main.py --num-samples 10000 --save-dir data
+     ```
+   - Or download and extract a prebuilt archive from the Hugging Face dataset page: [RAVEN on Hugging Face](https://huggingface.co/datasets/wojciechkosiuk/RAVEN). Extract it inside the `RAVEN/data` directory so you end up with:
+
+     ```text
+     noisescaling/
+     RAVEN/
+       data/
+         center_single/
+         distribute_four/
+         distribute_nine/
+         ...
+     ```
+
+4. Run training from the `noisescaling` repository root
+
+   ```bash
+   cd ../noisescaling
+   export WANDB_PROJECT=...
+   export WANDB_ENTITY=...
+   export WANDB_API_KEY=...
+   python train.py --config config_raven.yaml
+   ```
