@@ -62,8 +62,25 @@ def eval_model(model, dataloader, loss_fns, device, metrics):
         with torch.no_grad():
             inputs = inputs.to(device)
             targets = targets.to(device)
-            predictions = model(inputs)
-            loss_values = torch.tensor([loss['fn'](predictions, targets) * loss['weight'] for loss in loss_fns])
+            model_output = model(inputs)
+            if isinstance(model_output, dict):
+                predictions = model_output['predictions']
+                expert_reps = model_output.get('expert_representations', None)
+                injection_input = model_output.get('injection_input', None)
+            else:
+                predictions = model_output
+                expert_reps = None
+                injection_input = None
+
+            loss_values = torch.tensor([
+                loss['fn'](
+                    predictions, targets,
+                    expert_reps=expert_reps,
+                    scaler=getattr(model, 'scaler', None),
+                    injection_input=injection_input
+                ) * loss['weight']
+                for loss in loss_fns
+            ])
             results['loss'] += torch.sum(loss_values).item()
             results = run_metrics(predictions, targets, model, inputs, device, metrics, results)
             for i, loss in enumerate(loss_fns):

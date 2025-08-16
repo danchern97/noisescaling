@@ -113,11 +113,13 @@ def eval_model(model, dataloader, loss_fns, device, metrics):
             if isinstance(model_output, dict):
                 predictions = model_output['predictions']
                 expert_reps = model_output.get('expert_representations', None)
+                injection_input = model_output.get('injection_input', None)
             else:
                 predictions = model_output
                 expert_reps = None
+                injection_input = None
 
-            loss_values = torch.tensor([loss['fn'](predictions, targets, **({"expert_reps": expert_reps})) * loss['weight'] for loss in loss_fns])
+            loss_values = torch.tensor([ loss['fn'](predictions, targets, expert_reps=expert_reps, scaler=getattr(model, 'scaler', None), injection_input=injection_input ) * loss['weight'] for loss in loss_fns ])
             results['loss'] += torch.sum(loss_values).item()
             results = run_metrics(predictions, targets, model, inputs, device, metrics, results)
             for i, loss in enumerate(loss_fns):
@@ -269,12 +271,14 @@ def train_model(config):
             if isinstance(model_output, dict):
                 predictions = model_output['predictions']
                 expert_reps = model_output.get('expert_representations', None)
+                injection_input = model_output.get('injection_input', None)
             else:
                 predictions = model_output
                 expert_reps = None
+                injection_input = None
 
             # Multiple losses are summed up with corresponding coefficients
-            loss_values = torch.stack([loss['fn'](predictions, targets, **({"expert_reps": expert_reps})) * loss['weight'] for loss in loss_fns], dim=0)
+            loss_values = torch.stack([ loss['fn']( predictions, targets, expert_reps=expert_reps, scaler=getattr(model, 'scaler', None), injection_input=injection_input ) * loss['weight'] for loss in loss_fns ], dim=0)
             loss = torch.sum(loss_values)
             loss.backward()
             optimizer.step()

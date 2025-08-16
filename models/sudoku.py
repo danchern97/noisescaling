@@ -5,6 +5,7 @@ import torch.nn.functional as F
 from . import register_model, register_loss
 from .scalers import StaticScaler
 from .aggregators import Aggregator
+from .scalers import NormalizingFlowScaler
 
 class Reshape(nn.Module):
     def __init__(self, *args):
@@ -138,19 +139,20 @@ class SudokuCNN(nn.Module):
 
         # Start with the tensor at the point *before* the injection
         if self.injection_point == '0':
-            x = x_enc
+            x_injection = x_enc
         elif self.injection_point == '1':
-            x = self.mid_1(x_enc)
+            x_injection = self.mid_1(x_enc)
         elif self.injection_point == '2':
             x = self.mid_2(self.mid_1(x_enc))
         elif self.injection_point == '3':
-            x = self.mid_3(self.mid_2(self.mid_1(x_enc)))
+            x_injection = self.mid_3(self.mid_2(self.mid_1(x_enc)))
         elif self.injection_point == '4':
-            x = self.mid_4(self.mid_3(self.mid_2(self.mid_1(x_enc))))
+            x_injection = self.mid_4(self.mid_3(self.mid_2(self.mid_1(x_enc))))
         # Apply the scaler to get the expert representations
         # This is the tensor we need to pass to the loss function.
-        expert_reps = self.scaler(x)
-        
+        expert_reps = self.scaler(x_injection)
+        if isinstance(expert_reps, tuple):
+            expert_reps = expert_reps[0]
         # --- Continue the forward pass from the injection point ---
         if self.injection_point == '0':
             x = self.aggregator(torch.stack([self.flatten(self.mid_4(self.mid_3(self.mid_2(self.mid_1(expert_reps[:, i]))))) for i in range(expert_reps.shape[1])], dim=1)) # (B, 1024)
@@ -172,7 +174,8 @@ class SudokuCNN(nn.Module):
 
         return {
             'predictions': final_preds,
-            'expert_representations': expert_reps
+            'expert_representations': expert_reps,
+            'injection_input': x_injection
         }
 
 
@@ -262,6 +265,11 @@ class SudokuMLPAggregator(Aggregator):
         x = x.view(x.shape[0], -1) # (B, 9*9*9*n_transforms)
         return self.aggregator(x)
 
+@register_model("SudokuNormalizingFlowScaler")
+class SudokuNormalizingFlowScaler(NormalizingFlowScaler):
+    def __init__(self, n_coupling_layers=4, hidden_dim=64, n_reps=2, **kwargs):
+        super().__init__(n_coupling_layers=n_coupling_layers, hidden_dim=hidden_dim, n_reps=n_reps, **kwargs)
+
 @register_loss("sudoku_loss")
 def get_loss_sudoku(predictions, targets, **kwargs):
     return nn.functional.cross_entropy(predictions, targets)
@@ -340,3 +348,34 @@ def orthonormality_loss(
     loss = d * F.mse_loss(covariance, identity)
     
     return loss
+
+
+@register_loss("flow_nll_loss")
+def flow_nll_loss(
+    predictions: torch.Tensor,
+    targets: torch.Tensor,
+    expert_reps: torch.Tensor = None,
+    scaler: nn.Module = None,
+    **kwargs
+) -> torch.Tensor:
+    """
+    Negative log-likelihood loss for normalizing flow scaler.
+    Assumes scaler is a NormalizingFlowScaler and expert_reps is not None.
+    """
+    # Use the original input at the injection point (not the experts)
+    x = kwargs.get("injection_input", None)
+    if x is None or scaler is None:
+        return torch.tensor(0.0, device=predictions.device, dtype=torch.float32)
+
+    # Forward pass through the flow (data -> latent)
+    z = x
+    sum_log_det = torch.zeros(z.shape[0], device=z.device)
+    for flow in scaler.flow_layers:
+        z, log_det = flow(z, reverse=False, return_log_det=True)
+        sum_log_det += log_det
+
+    # Compute log prob under base distribution
+    log_p_z = scaler.base_dist.log_prob(z).sum(dim=[1,2,3])  # sum over C,H,W
+    log_p_x = log_p_z + sum_log_det
+    nll = -log_p_x.mean()
+    return nll
