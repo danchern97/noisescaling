@@ -12,8 +12,10 @@ from huggingface_hub import hf_hub_download
 
 from data_processing import DATASET_REGISTRY, get_collate_fn
 from models import MODEL_REGISTRY, LOSS_REGISTRY
-from utils import count_trainable_parameters, set_seed
-from utils.logger import get_logger
+from utils import (
+    count_trainable_parameters, set_seed, update_config, parse_sweep_args, get_logger, 
+    generate_run_name, save_best_model
+)
 from utils.metrics import METRIC_REGISTRY
 from tqdm.auto import tqdm
 import glob
@@ -127,28 +129,41 @@ def eval_model(model, dataloader, loss_fns, device, metrics):
         results[metric] /= len(dataloader)
     return results
 
-def train_model(config):
+def train_model(config, sweep_args=None):
     # Load environment variables
-    load_dotenv(dotenv_path='.env')
+    load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '.env'))
+    
+    # Initialize wandb
+    run_name = generate_run_name(config, sweep_args)
 
-    # Set seed for reproducibility
-    set_seed(config['training']['seed'])
-
-    # Create logger
-    logger = get_logger(config['training']['experiment_name'])
-
-    # Create model checkpoint directory
-    base_model_dir = os.getenv('MODELS_DIR', 'models_cache')
-    model_dir = os.path.join(base_model_dir, config['training']['experiment_name'])
-    os.makedirs(model_dir, exist_ok=True)
+    # Update config with sweep parameters
+    sweep_config = parse_sweep_args(sweep_args)
+    config = update_config(config, sweep_config)
+    print(config)
+    if os.getenv('WANDB_DIR', None) is None:
+        raise ValueError("WANDB_DIR is not set. Please set it in the .env file.")
+    else:
+        print("WANDB_DIR is set to ", os.getenv('WANDB_DIR'))
 
     # Initialize wandb
     run = wandb.init(
-        project=os.getenv('WANDB_PROJECT'),
-        entity=os.getenv('WANDB_ENTITY'),
-        name=config['training']['experiment_name'],
+        # project=os.getenv('WANDB_PROJECT'),
+        # entity=os.getenv('WANDB_ENTITY'),
+        dir=os.getenv('WANDB_DIR'),
+        name=run_name,
         config=config
     )
+    
+    # Set seed for reproducibility
+    set_seed(config['training'].get('seed', 42))
+
+    # Create logger
+    logger = get_logger(run_name)
+
+    # Create model checkpoint directory
+    base_model_dir = os.getenv('MODELS_DIR', 'models_cache')
+    model_dir = os.path.join(base_model_dir, run_name)
+    os.makedirs(model_dir, exist_ok=True)
 
     # Set up the scaler and aggregator
     scaler, aggregator = None, None
@@ -188,7 +203,7 @@ def train_model(config):
         aggregator = get_model_by_name(model_config['aggregator']['name'], **model_config['aggregator']['args'])
 
     # Get the model from the registry
-    model = get_model_by_name(model_config['name'], scaler=scaler, aggregator=aggregator, injection_point=injection_point, dropout=model_config.get('args', {}).get('dropout', 0.0))
+    model = get_model_by_name(model_config['name'], scaler=scaler, aggregator=aggregator, injection_point=injection_point, **model_config.get('args', {}))
     logger.info(f"Model Architecture:\n{model}")
     # Load pretrained weights, if provided.
     if model_config.get('pretrained_path', None):
@@ -226,17 +241,26 @@ def train_model(config):
 
     else:
         raise ValueError(f"Invalid scaler regime: {config['training']['scaler_regime']}. Supported regimes are 'full' and 'partial'.")
+    
     optimizer = AdamW(parameters, lr=config['training'].get('learning_rate', 0.001))
     scheduler_config = config['training'].get('scheduler', None)
     scheduler = None
     if scheduler_config:
         if scheduler_config['name'] == 'linear':
-            scheduler = LinearLR(optimizer, start_factor=0.1, end_factor=1.0, total_iters=scheduler_config['steps'])
+            scheduler = LinearLR(optimizer, **scheduler_config['args'])
         else:
             raise ValueError(f"Scheduler {scheduler_config['name']} not supported.")
     # Get the loss function from the registry
     loss_fns = [{'name': loss['name'], 'fn': LOSS_REGISTRY[loss['name']], 'weight': loss['weight']} for loss in model_config['losses']]
-    model.compile()
+    
+    # Checkpoint configuration
+    best_metric_value = None
+    checkpoint_metric_config = config['training'].get('checkpoint_metric')
+    if checkpoint_metric_config:
+        best_metric_value = float('-inf') if checkpoint_metric_config['mode'] == 'max' else float('inf')
+        logger.info(f"Will save best model based on {checkpoint_metric_config['name']} ({checkpoint_metric_config['mode']})")
+
+    # model.compile()
 
     eval_results = eval_model(model, dataloaders['validation'], loss_fns, device, config['training']['validation_metrics'])
     log_msg = f"Validation results at the beginning: "
@@ -249,7 +273,7 @@ def train_model(config):
     model.train()
     step = 0
     for epoch in range(config['training'].get('epochs', 100)):
-        for _, (inputs, targets, _) in enumerate(tqdm(dataloaders['train'], desc='Training')):
+        for _, (inputs, targets, _) in enumerate(tqdm(dataloaders['train'], desc='Training',)):
             
             # 2. THE FIX: If in partial regime, selectively set baseline modules to eval mode
             if config['training'].get('scaler_regime', None) == 'partial':
@@ -260,6 +284,10 @@ def train_model(config):
                 if hasattr(model, 'mid_4'): model.mid_4.eval()
                 if hasattr(model, 'dec'): model.dec.eval()
 
+    model.train()
+    step = 0
+    for epoch in range(config['training'].get('epochs', 100)):
+        for _, (inputs, targets, _) in enumerate(tqdm(dataloaders['train'], desc='Training')):
             inputs = inputs.to(device)
             targets = targets.to(device)
                     
@@ -302,14 +330,21 @@ def train_model(config):
                 log_msg += ", ".join([f"{k}: {v:.4f}" for k, v in eval_results.items()])
                 logger.info(log_msg)
                 log_dict = {f"val/{k}": v for k, v in eval_results.items()}
+                log_dict['epoch'] = epoch
+                log_dict['step'] = step
                 run.log(log_dict)
                 
-                # Save model checkpoint
-                model_path = os.path.join(model_dir, f"model_{step}.pt")
-                torch.save(model.state_dict(), model_path)
-                run.save(model_path)
+                    # Save model checkpoint
+                if checkpoint_metric_config:
+                    best_metric_value = save_best_model(model, model_dir, eval_results, checkpoint_metric_config, best_metric_value, logger, run)
+                else:
+                    # Save every time
+                    save_path = os.path.join(model_dir, f"model_{step}.pt")
+                    torch.save(model.state_dict(), save_path)
+                    run.save(save_path)
                 # Delete old checkpoints
                 cleanup_checkpoints(model_dir, logger, keep_last=5)
+
 
                 model.train()
 
@@ -326,9 +361,9 @@ def train_model(config):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Train a model.')
     parser.add_argument('--config', type=str, required=True, help='Path to the configuration file.')
-    args = parser.parse_args()
+    args, unknown = parser.parse_known_args()
 
     with open(args.config, 'r') as f:
         config = yaml.safe_load(f)
 
-    train_model(config)
+    train_model(config, unknown)

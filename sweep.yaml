@@ -1,0 +1,25 @@
+program: train.py
+method: bayes
+metric:
+  name: val/accuracy_unknown_cells
+  goal: maximize
+command:
+  - ${interpreter}
+  - ${program}
+  - --config
+  - configs/sudoku_baseline.yaml
+  - ${args}
+parameters:
+  training.learning_rate:
+    distribution: uniform
+    min: 0.0005
+    max: 0.01
+  training.batch_size:
+    values: [64, 256, 512, 1024]
+  model.args.dropout:
+    distribution: uniform
+    min: 0.0
+    max: 0.7
+early_terminate:
+  type: hyperband
+  min_iter: 25

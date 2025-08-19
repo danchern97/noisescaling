@@ -65,6 +65,40 @@ class MaxAggregator(Aggregator):
         Computes the maximum of the representations along the `self.aggregate_dim` dimension.
         """
         return torch.max(representations, dim=self.aggregate_dim)[0]
+    
+@register_model("MaxLNAggregator")
+class MaxLNAggregator(Aggregator):
+    """
+    A concrete implementation of Aggregator that combines multiple
+    representations by taking their maximum along the `self.aggregate_dim` dimension with a Layer Normalization.
+    """
+
+    def __init__(self, aggregate_dim : int = 1, aggregate_size : int = 1, **kwargs):
+        super().__init__(aggregate_dim, **kwargs)
+        self.ln = nn.LayerNorm(aggregate_size)
+
+    def forward(self, representations: torch.Tensor) -> torch.Tensor:
+        """
+        Computes the maximum of the representations along the `self.aggregate_dim` dimension.
+        """
+        return self.ln(torch.max(representations, dim=self.aggregate_dim)[0])
+    
+@register_model("MaxBNAggregator")
+class MaxBNAggregator(Aggregator):
+    """
+    A concrete implementation of Aggregator that combines multiple
+    representations by taking their maximum along the `self.aggregate_dim` dimension with a Batch Normalization.
+    """
+
+    def __init__(self, aggregate_dim : int = 1, aggregate_size : int = 1, **kwargs):
+        super().__init__(aggregate_dim, **kwargs)
+        self.bn = nn.BatchNorm1d(aggregate_size)
+
+    def forward(self, representations: torch.Tensor) -> torch.Tensor:
+        """
+        Computes the maximum of the representations along the `self.aggregate_dim` dimension.
+        """
+        return self.bn(torch.max(representations, dim=self.aggregate_dim)[0])
 
 @register_model("AttentionAggregator")
 class AttentionAggregator(Aggregator):

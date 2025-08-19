@@ -1,0 +1,32 @@
+#!/bin/sh
+#SBATCH --job-name=sudoku-baseline
+#SBATCH --output=./logs/sudoku-baseline_%j.out
+#SBATCH --error=./logs/sudoku-baseline_%j.err
+#SBATCH --time=24:00:00
+#SBATCH --gres=gpu:1
+
+module load cuda12.3/toolkit
+
+SWEEP_ID="vakz4izs"
+COUNT=$1
+PROJECT="noisescaling"
+ENTITY="m-d-cherniavskii-university-of-amsterdam"
+
+echo "Where am I?"
+
+cd $HOME/noisescaling
+
+pwd
+
+echo "Activating virtual environment"
+
+# Activate the virtual environment
+source /var/scratch/dchernia/.noise/bin/activate
+
+# List the cuda devices
+nvidia-smi
+
+echo "Running sweep $SWEEP_ID for $COUNT jobs"
+
+# Run the sweep
+wandb agent -p $PROJECT -e $ENTITY --count $COUNT $SWEEP_ID

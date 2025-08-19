@@ -52,7 +52,8 @@ def run_metrics(predictions, targets, model, inputs, device, metrics, results=No
     return results
     
 def eval_model(model, dataloader, loss_fns, device, metrics):
-    model.eval()
+    # model.eval()
+    model.train()
     results = {metric: 0.0 for metric in metrics}
     results['loss'] = 0.0
     for loss in loss_fns:
