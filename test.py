@@ -51,12 +51,15 @@ def run_metrics(predictions, targets, model, inputs, device, metrics, results=No
         results[metric] += METRIC_REGISTRY[metric](predictions=predictions, targets=targets, model=model, inputs=inputs, device=device).item()
     return results
     
-def eval_model(model, dataloader, loss_fns, device, metrics):
+def eval_model(model, dataloader, loss_fns, device, metrics, save_path=None):
     model.eval()
     results = {metric: 0.0 for metric in metrics}
     results['loss'] = 0.0
     for loss in loss_fns:
         results[loss['name']] = 0.0
+
+    all_preds = []
+    all_targets = []
     
     for inputs, targets, metadata in dataloader:
         with torch.no_grad():
@@ -72,6 +75,9 @@ def eval_model(model, dataloader, loss_fns, device, metrics):
                 expert_reps = None
                 injection_input = None
 
+            all_preds.append(predictions.cpu())
+            all_targets.append(targets.cpu())
+
             loss_values = torch.tensor([
                 loss['fn'](
                     predictions, targets,
@@ -85,6 +91,12 @@ def eval_model(model, dataloader, loss_fns, device, metrics):
             results = run_metrics(predictions, targets, model, inputs, device, metrics, results)
             for i, loss in enumerate(loss_fns):
                 results[loss['name']] += loss_values[i].item()
+
+    if save_path is not None:
+        torch.save({
+            'predictions': torch.cat(all_preds, dim=0),
+            'targets': torch.cat(all_targets, dim=0)
+        }, save_path)
 
     for metric in results:
         results[metric] /= len(dataloader)
@@ -104,7 +116,6 @@ def test_model(config):
     base_model_dir = os.getenv('MODELS_DIR', 'models_cache')
     model_dir = os.path.join(base_model_dir, config['training']['experiment_name'])
     os.makedirs(model_dir, exist_ok=True)
-
     # Initialize wandb
     run = wandb.init(
         project=os.getenv('WANDB_PROJECT'),
@@ -140,7 +151,9 @@ def test_model(config):
     loss_fns = [{'name': loss['name'], 'fn': LOSS_REGISTRY[loss['name']], 'weight': loss['weight']} for loss in config['model']['losses']]
 
     # Evaluate the final model on the test set
-    eval_results = eval_model(model, test_dataloader, loss_fns, device, config['training']['validation_metrics'])
+    save_path = os.path.join(model_dir, "test_preds.pt")
+    eval_results = eval_model(model, test_dataloader, loss_fns, device, config['training']['validation_metrics'], save_path=save_path)
+
     logger.info(f"Test results: {eval_results}")
     eval_results = {f"test/{k}": v for k, v in eval_results.items()}
     run.log(eval_results)
