@@ -1,0 +1,40 @@
+training:
+  experiment_name: "sudoku-deep-baseline-midlayers=1-dropout=0.5-batchsize=256-lr=0.005-filter_train=true"
+  # Hardware parameters
+  num_workers: 4 # Number of workers for dataloader
+  device: "cuda:0" # Device to use for training
+  # Training parameters
+  batch_size: 256
+  learning_rate: 0.005
+  epochs: 500
+  # scheduler:
+  #   name: "linear"
+  #   args:
+  #     start_factor: 0.1
+  #     end_factor: 1.0
+  #     total_iters: 3000
+  # Validation parameters
+  eval_interval: 500
+  training_metrics: ["accuracy", "accuracy_unknown_cells"]
+  validation_metrics: ["accuracy", "accuracy_unknown_cells"]
+  checkpoint_metric:
+    name: "accuracy_unknown_cells"
+    mode: "max"
+  
+  # Seed for reproducibility
+  seed: 42
+  logger: "sudoku_logger"
+  max_samples_to_log: 16
+  
+dataset:
+  name: "sudoku"
+  path: "/var/scratch/dchernia/sudoku"
+  filter_train: true
+
+model:
+  name: "SudokuCNN"
+  losses: [{"name": "cross_entropy_loss", "weight": 1.0}]
+  args:
+    dropout: 0.5
+    n_mid_layers: 1
+    n_dec_layers: 0

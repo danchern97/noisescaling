@@ -16,6 +16,7 @@ from utils import (
     count_trainable_parameters, set_seed, update_config, parse_sweep_args, get_logger, 
     generate_run_name, save_best_model
 )
+from utils.loggers import LOGGER_REGISTRY
 from utils.metrics import METRIC_REGISTRY
 from tqdm.auto import tqdm
 import glob
@@ -61,51 +62,53 @@ def run_metrics(predictions, targets, model, inputs, device, metrics, results=No
         results[metric] += METRIC_REGISTRY[metric](predictions=predictions, targets=targets, model=model, inputs=inputs, device=device).item()
     return results
 
-def load_state_dict(path, version=None):
+# def load_state_dict(path, version=None):
     
-    saved_state_dict = torch.load(path)
+#     saved_state_dict = torch.load(path)
 
-    if version:
+#     if version:
         
-        new_state_dict = OrderedDict()
+#         new_state_dict = OrderedDict()
 
-        if version == 'baseline':
+#         if version == 'baseline':
 
-            for old_key, value in saved_state_dict.items():
+#             for old_key, value in saved_state_dict.items():
                 
-                new_key = old_key
+#                 new_key = old_key
 
-                # --- CORE RENAMING LOGIC for the 'mid' layers ---
-                if old_key.startswith('mid.0.'):
-                    # Replace 'mid.0.' with 'mid_1.'
-                    new_key = old_key.replace('mid.0.', 'mid_1.', 1)
-                elif old_key.startswith('mid.1.'):
-                    # Replace 'mid.1.' with 'mid_2.'
-                    new_key = old_key.replace('mid.1.', 'mid_2.', 1)
-                elif old_key.startswith('mid.2.'):
-                    # Replace 'mid.2.' with 'mid_3.'
-                    new_key = old_key.replace('mid.2.', 'mid_3.', 1)
-                elif old_key.startswith('mid.3.'):
-                    # Replace 'mid.3.' with 'mid_4.'
-                    new_key = old_key.replace('mid.3.', 'mid_4.', 1)
+#                 # --- CORE RENAMING LOGIC for the 'mid' layers ---
+#                 if old_key.startswith('mid.0.'):
+#                     # Replace 'mid.0.' with 'mid_1.'
+#                     new_key = old_key.replace('mid.0.', 'mid_1.', 1)
+#                 elif old_key.startswith('mid.1.'):
+#                     # Replace 'mid.1.' with 'mid_2.'
+#                     new_key = old_key.replace('mid.1.', 'mid_2.', 1)
+#                 elif old_key.startswith('mid.2.'):
+#                     # Replace 'mid.2.' with 'mid_3.'
+#                     new_key = old_key.replace('mid.2.', 'mid_3.', 1)
+#                 elif old_key.startswith('mid.3.'):
+#                     # Replace 'mid.3.' with 'mid_4.'
+#                     new_key = old_key.replace('mid.3.', 'mid_4.', 1)
 
-                print(f"Mapping '{old_key}' to '{new_key}'")
-                new_state_dict[new_key] = value
+#                 print(f"Mapping '{old_key}' to '{new_key}'")
+#                 new_state_dict[new_key] = value
 
-        else:
-            raise ValueError(f"Version {version} not implemented to load state dict.")
+#         else:
+#             raise ValueError(f"Version {version} not implemented to load state dict.")
 
-        saved_state_dict = new_state_dict
+#         saved_state_dict = new_state_dict
 
-    return saved_state_dict
+#     return saved_state_dict
 
-def eval_model(model, dataloader, loss_fns, device, metrics):
+def eval_model(model, dataloader, loss_fns, device, metrics, log_prefix=None, config=None):
     model.eval()
     results = {metric: 0.0 for metric in metrics}
     results['loss'] = 0.0
     for loss in loss_fns:
         results[loss['name']] = 0.0
     
+    all_inputs, all_predictions, all_targets = [], [], []
+
     for inputs, targets, metadata in dataloader:
         with torch.no_grad():
             inputs = inputs.to(device)
@@ -113,17 +116,34 @@ def eval_model(model, dataloader, loss_fns, device, metrics):
             model_output = model(inputs)
             
             if isinstance(model_output, dict):
-                predictions = model_output['predictions']
+                predictions = model_output.pop('predictions')
                 expert_reps = model_output.get('expert_representations', None)
             else:
                 predictions = model_output
                 expert_reps = None
+            
+            all_inputs.append(inputs)
+            all_predictions.append(predictions)
+            all_targets.append(targets)
 
-            loss_values = torch.tensor([loss['fn'](predictions, targets, **({"expert_reps": expert_reps})) * loss['weight'] for loss in loss_fns])
+            loss_values = torch.tensor([loss['fn'](predictions, targets, **model_output) * loss['weight'] for loss in loss_fns])
             results['loss'] += torch.sum(loss_values).item()
             results = run_metrics(predictions, targets, model, inputs, device, metrics, results)
             for i, loss in enumerate(loss_fns):
                 results[loss['name']] += loss_values[i].item()
+
+    if log_prefix and config and config['training'].get('logger', None):
+        logger_fn_name = config['training']['logger']
+        if logger_fn_name in LOGGER_REGISTRY:
+            logger_fn = LOGGER_REGISTRY[logger_fn_name]
+            table = logger_fn(
+                torch.cat(all_predictions), 
+                torch.cat(all_targets), 
+                torch.cat(all_inputs), 
+                max_samples=config['training'].get('max_samples_to_log', 4)
+            )
+            if table:
+                wandb.log({f"{log_prefix}/predictions": table})
 
     for metric in results:
         results[metric] /= len(dataloader)
@@ -168,42 +188,25 @@ def train_model(config, sweep_args=None):
     # Set up the scaler and aggregator
     scaler, aggregator = None, None
     model_config = config['model']
-    injection_point = model_config.get('injection_point')
-
 
     if model_config.get('scaler', None):
-        scaler_config = model_config['scaler']
-        scaler_args = scaler_config.get('args', {})
-
-        if injection_point is not None:
-            if injection_point == '0':
-                scaler_args['layer_type'] = 'conv'
-                scaler_args['dim'] = 256  # number of channels
-            elif injection_point == '1':
-                scaler_args['layer_type'] = 'conv'
-                scaler_args['dim'] = 512
-            elif injection_point == '2':
-                scaler_args['layer_type'] = 'conv'
-                scaler_args['dim'] = 512
-            elif injection_point == '3':
-                scaler_args['layer_type'] = 'conv'
-                scaler_args['dim'] = 1024
-            elif injection_point == '4':
-                scaler_args['layer_type'] = 'conv'
-                scaler_args['dim'] = 9
-
-            else:
-                raise ValueError(f"Unsupported injection_point: {injection_point}")
-            
-            logger.info(f"Using scaler at injection point: {injection_point} with args: {scaler_args}")
+        # TODO: Add automatic dimension detection and validation
+        logger.info(f"Using scaler with args: {model_config['scaler']['args']}")
         
-            scaler = get_model_by_name(scaler_config['name'], **scaler_args)
+        scaler = get_model_by_name(model_config['scaler']['name'], **model_config['scaler']['args'])
 
     if model_config.get('aggregator', None):
         aggregator = get_model_by_name(model_config['aggregator']['name'], **model_config['aggregator']['args'])
 
     # Get the model from the registry
-    model = get_model_by_name(model_config['name'], scaler=scaler, aggregator=aggregator, injection_point=injection_point, **model_config.get('args', {}))
+    model = get_model_by_name(
+        model_config['name'], 
+        scaler=scaler, 
+        aggregator=aggregator, 
+        scaler_inj_point=model_config.get('scaler', {}).get('inj_point', None), 
+        aggregator_inj_point=model_config.get('aggregator', {}).get('inj_point', None), 
+        **model_config.get('args', {})
+    )
     logger.info(f"Model Architecture:\n{model}")
     # Load pretrained weights, if provided.
     if model_config.get('pretrained_path', None):
@@ -218,8 +221,8 @@ def train_model(config, sweep_args=None):
         logger.info(f"Loading pretrained weights from {pretrained_path}")
         state_dict = load_state_dict(pretrained_path, version=model_config.get('pretrained_version'))
         missing, unexpected = model.load_state_dict(state_dict, strict=False)
-        print("Missing keys:", missing)
-        print("Unexpected keys:", unexpected)
+        logger.warning(f"Missing keys: {missing}")
+        logger.warning(f"Unexpected keys: {unexpected}")
         
     run.watch(model)
     
@@ -262,7 +265,7 @@ def train_model(config, sweep_args=None):
 
     # model.compile()
 
-    eval_results = eval_model(model, dataloaders['validation'], loss_fns, device, config['training']['validation_metrics'])
+    eval_results = eval_model(model, dataloaders['validation'], loss_fns, device, config['training']['validation_metrics'], "val", config)
     log_msg = f"Validation results at the beginning: "
     log_msg += ", ".join([f"{k}: {v:.4f}" for k, v in eval_results.items()])
     logger.info(log_msg)
@@ -270,21 +273,9 @@ def train_model(config, sweep_args=None):
     run.log(log_dict)
 
 
-    model.train()
-    step = 0
-    for epoch in range(config['training'].get('epochs', 100)):
-        for _, (inputs, targets, _) in enumerate(tqdm(dataloaders['train'], desc='Training',)):
-            
-            # 2. THE FIX: If in partial regime, selectively set baseline modules to eval mode
-            if config['training'].get('scaler_regime', None) == 'partial':
-                if hasattr(model, 'enc'): model.enc.eval()
-                if hasattr(model, 'mid_1'): model.mid_1.eval()
-                if hasattr(model, 'mid_2'): model.mid_2.eval()
-                if hasattr(model, 'mid_3'): model.mid_3.eval()
-                if hasattr(model, 'mid_4'): model.mid_4.eval()
-                if hasattr(model, 'dec'): model.dec.eval()
-
-    model.train()
+    # --- TRAINING LOOP ---
+    # Set the model to train mode, or partial train mode if in partial regime
+    model.train() if config['training'].get('scaler_regime', 'full') == 'full' else model.partial_train()
     step = 0
     for epoch in range(config['training'].get('epochs', 100)):
         for _, (inputs, targets, _) in enumerate(tqdm(dataloaders['train'], desc='Training')):
@@ -295,14 +286,11 @@ def train_model(config, sweep_args=None):
             #predictions = model(inputs)
 
             if isinstance(model_output, dict):
-                predictions = model_output['predictions']
-                expert_reps = model_output.get('expert_representations', None)
+                predictions = model_output.pop('predictions')
             else:
                 predictions = model_output
-                expert_reps = None
-
             # Multiple losses are summed up with corresponding coefficients
-            loss_values = torch.stack([loss['fn'](predictions, targets, **({"expert_reps": expert_reps})) * loss['weight'] for loss in loss_fns], dim=0)
+            loss_values = torch.stack([loss['fn'](predictions=predictions, targets=targets, **model_output) * loss['weight'] for loss in loss_fns], dim=0)
             loss = torch.sum(loss_values)
             loss.backward()
             optimizer.step()
@@ -325,7 +313,7 @@ def train_model(config, sweep_args=None):
             step += 1
 
             if step % config['training'].get('eval_interval', 500) == 0 and 'validation' in dataloaders:
-                eval_results = eval_model(model, dataloaders['validation'], loss_fns, device, config['training']['validation_metrics'])
+                eval_results = eval_model(model, dataloaders['validation'], loss_fns, device, config['training']['validation_metrics'], 'val', config)
                 log_msg = f"Validation results at epoch {epoch}, step {step}: "
                 log_msg += ", ".join([f"{k}: {v:.4f}" for k, v in eval_results.items()])
                 logger.info(log_msg)
@@ -350,7 +338,7 @@ def train_model(config, sweep_args=None):
 
     # Evaluate the final model on the test set
     if 'test' in dataloaders:
-        eval_results = eval_model(model, dataloaders['test'], loss_fns, device, config['training']['validation_metrics'])
+        eval_results = eval_model(model, dataloaders['test'], loss_fns, device, config['training']['validation_metrics'], 'test', config)
         logger.info(f"Test results: {eval_results}")
         eval_results = {f"test/{k}": v for k, v in eval_results.items()}
         run.log(eval_results)

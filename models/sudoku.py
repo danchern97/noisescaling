@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from typing import Optional
+import itertools
 import torch.nn.functional as F
 from . import register_model, register_loss
 from .scalers import StaticScaler
@@ -63,122 +64,101 @@ class ResidualBlock(nn.Module):
         
 @register_model("SudokuCNN")
 class SudokuCNN(nn.Module):
-    def __init__(self, scaler: Optional[nn.Module] = None, aggregator: Optional[nn.Module] = None, injection_point: str = 'pre_dec', dropout: float = 0.0, **kwargs):
+    def __init__(self, scaler: Optional[nn.Module] = None, aggregator: Optional[nn.Module] = None, scaler_inj_point: int = 3, aggregator_inj_point: int = 7, dropout: float = 0.0, n_mid_layers : int = 1, n_dec_layers : int = 0, **kwargs):
         """
         A flexible CNN for Sudoku with fine-grained expert injection points within the decoder.
 
         Args:
             scaler (Optional[nn.Module]): A module that creates multiple representations.
             aggregator (Optional[nn.Module]): A module that aggregates multiple representations.
-            **kwargs: Must contain `injection_point` to control the expert location.
+            scaler_inj_point (int): The index of the layer where the scaler is injected.
+            aggregator_inj_point (int): The index of the layer where the aggregator is injected.
+            dropout (float): The dropout rate.
+            n_mid_layers (int): The number of middle layers (Conv 512 -> 512) to add
+            n_dec_layers (int): The number of decoder layers (Linear 512 -> 512) to add
+            **kwargs: Additional arguments for the parent class.
         """
         super(SudokuCNN, self).__init__()
 
         self.scaler = scaler
         self.aggregator = aggregator
 
-        # self.alpha = 0.0  # start using only baseline path
-
-        # --- Define the valid injection points within the decoder ---
-        self.allowed_injection_points: List[str] = [
-            '0',  # After encoder
-            '1',  # After first mid layer
-            '2',  # After second mid layer
-            '3',  # After third mid layer
-            '4',  # After fourth mid layer
-        ]
-        
-        # --- Get the injection point from kwargs, with validation ---
-        self.injection_point = injection_point
-
-        if self.scaler is not None and self.injection_point not in self.allowed_injection_points:
-            raise ValueError(
-                f"Invalid injection_point '{self.injection_point}'. "
-                f"With a scaler provided, it must be one of {self.allowed_injection_points}"
-            )
-
-
-        # --- Define the core architectural blocks ---
-        self.enc = nn.Sequential(
+        # -- Define the main model as the list of layers --
+        self.layers = [
             ConvBlock(1, 128),
-            ConvBlock(128, 256)
-        )
+            ConvBlock(128, 128),
+            ConvBlock(128, 256),
+            ConvBlock(256, 256),
+            ConvBlock(256, 512)
+        ]
+        for _ in range(n_mid_layers):
+            self.layers.append(ConvBlock(512, 512))
 
-        self.mid_1 = ConvBlock(256, 512)
-        self.mid_2 = ConvBlock(512, 512)
-        self.mid_3 = ConvBlock(512, 1024)
-        self.mid_4 = ConvBlock(1024, 9)
-
-        self.flatten = nn.Flatten()
-
-        # --- Break up the decoder from nn.Sequential to allow for injection ---
-        self.dec = nn.Sequential(
+        self.layers.extend([
+            ConvBlock(512, 1024),
+            ConvBlock(1024, 9),
+            nn.Flatten(),
             LinearBlock(9*9*9, 512),
-            nn.Dropout(dropout),
+            nn.Dropout(dropout)
+        ])
+        for _ in range(n_dec_layers):
+            self.layers.extend([
+                LinearBlock(512, 512)
+                # nn.Dropout(dropout)
+            ])
+        self.layers.extend([
             LinearBlock(512, 81 * 9),
             nn.LayerNorm(81 * 9),
             Reshape((-1, 9, 9, 9)),
-        )
+        ])
+        self.layers = nn.ModuleList(self.layers)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # -- Validate the scaler and aggregator --
+        if (scaler is not None and aggregator is None) or (scaler is None and aggregator is not None):
+            raise ValueError("Scaler and aggregator must be either both None or both not None")
+
+        if scaler is not None:
+            if 0 <= scaler_inj_point < len(self.layers):
+                self.scaler_inj_point = scaler_inj_point
+            else:
+                raise ValueError(f"Invalid scaler_inj_point '{scaler_inj_point}'. Must be between 0 and {len(self.layers) - 1}")
+            if scaler_inj_point < aggregator_inj_point < len(self.layers):
+                self.aggregator_inj_point = aggregator_inj_point
+            else:
+                raise ValueError(f"Invalid aggregator_inj_point '{aggregator_inj_point}'. Must be between '{scaler_inj_point + 1}' and {len(self.layers) - 1}")
+        
+
+    def forward(self, x: torch.Tensor) -> dict[str, torch.Tensor]:
         """Defines the data flow with precise injection points."""
-        
-        x_enc = self.enc(x)
+        outputs = {}
+        for i, layer in enumerate(self.layers):
+            if self.scaler is not None and i == self.scaler_inj_point: # Scale the representation x -> list[x]
+                x = self.scaler(x)
+            if self.aggregator is not None and i == self.aggregator_inj_point: # Aggregate the representations list[x] -> x
+                outputs['expert_representations'] = x
+                outputs['expert_predictions'] = x # Keep track of expert representations until the prediction
+                x = self.aggregator(x)
+            if isinstance(x, list):
+                x = [layer(x_repr) for x_repr in x]
+            else:
+                x = layer(x)
+                if 'expert_predictions' in outputs: # Apply the same transformation to the expert representations to decode them to predictions
+                    outputs['expert_predictions'] = [layer(x_repr) for x_repr in outputs['expert_predictions']]
+        outputs['predictions'] = x
+        return outputs
 
-        # --- Case 1: No experts. Return a dictionary with only predictions. ---
-        if self.scaler is None or self.aggregator is None:
-            
-            x = self.flatten(self.mid_4(self.mid_3(self.mid_2(self.mid_1(x_enc)))))
-            final_preds = self.dec(x)
-            
-            return {'predictions': final_preds}
-
-        # --- Case 2: Experts are used. ---
-        # alpha = getattr(self, 'alpha', 1.0)  # default full use if not set externally
-
-        # Start with the tensor at the point *before* the injection
-        if self.injection_point == '0':
-            x = x_enc
-        elif self.injection_point == '1':
-            x = self.mid_1(x_enc)
-        elif self.injection_point == '2':
-            x = self.mid_2(self.mid_1(x_enc))
-        elif self.injection_point == '3':
-            x = self.mid_3(self.mid_2(self.mid_1(x_enc)))
-        elif self.injection_point == '4':
-            x = self.mid_4(self.mid_3(self.mid_2(self.mid_1(x_enc))))
-        # Apply the scaler to get the expert representations
-        # This is the tensor we need to pass to the loss function.
-        expert_reps = self.scaler(x)
-        
-        # --- Continue the forward pass from the injection point ---
-        if self.injection_point == '0':
-            x = self.aggregator(torch.stack([self.flatten(self.mid_4(self.mid_3(self.mid_2(self.mid_1(expert_reps[:, i]))))) for i in range(expert_reps.shape[1])], dim=1)) # (B, 1024)
-        elif self.injection_point == '1':
-            x = self.aggregator(torch.stack([self.flatten(self.mid_4(self.mid_3(self.mid_2(expert_reps[:, i])))) for i in range(expert_reps.shape[1])], dim=1))
-        elif self.injection_point == '2':
-            x = self.aggregator(torch.stack([self.flatten(self.mid_4(self.mid_3(expert_reps[:, i]))) for i in range(expert_reps.shape[1])], dim=1))
-        elif self.injection_point == '3':
-            x = self.aggregator(torch.stack([self.flatten(self.mid_4(expert_reps[:, i])) for i in range(expert_reps.shape[1])], dim=1))
-        elif self.injection_point == '4':
-            x = self.aggregator(torch.stack([self.flatten(expert_reps[:, i]) for i in range(expert_reps.shape[1])], dim=1))
-
-        final_preds = self.dec(x)
-
-        # baseline_path = self.flatten(self.mid_4(self.mid_3(self.mid_2(self.mid_1(x_enc)))))
-        # baseline_preds = self.dec(baseline_path)
-        # # blend outputs
-        # blended_preds = (1 - alpha) * baseline_preds + alpha * final_preds
-
-        return {
-            'predictions': final_preds,
-            'expert_representations': expert_reps
-        }
+    def partial_train(self):
+        """
+        Sets the main model layers to eval mode to avoid distribution shift, and the scaler and aggregator to train mode.
+        """
+        self.layers.eval()
+        self.scaler.train()
+        self.aggregator.train()
 
 
 @register_model("SudokuStaticScaler")
 class SudokuStaticScaler(StaticScaler):
-    def __init__(self, n_transforms: int = 1, layer_type: str = 'conv', dim: int = 256, **kwargs):
+    def __init__(self, n_transforms: int = 1, layer_type: str = 'conv', dim: int = 256, use_residual: bool = False, **kwargs):
         """
         A flexible static scaler that can create either convolutional or linear transformations.
 
@@ -187,6 +167,7 @@ class SudokuStaticScaler(StaticScaler):
             layer_type (str): The type of layer to use. Must be 'conv' or 'linear'.
             dim (int): The feature dimension. For 'conv', this is the number of channels.
                        For 'linear', this is the number of input/output features.
+            use_residual (bool): Whether to use a residual block around the transformation.
             **kwargs: Additional arguments for the parent class.
         """
         # --- Validate the layer_type argument ---
@@ -194,21 +175,24 @@ class SudokuStaticScaler(StaticScaler):
             raise ValueError(f"Invalid layer_type '{layer_type}'. Must be 'conv' or 'linear'.")
 
         transformations = []
-        dropout_p = kwargs.pop('dropout', 0.5)  # default 50%, can pass via scaler args
+        dropout_p = kwargs.pop('dropout', 0.0)  # default 0%, can pass via scaler args
 
         for _ in range(n_transforms - 1):
             if layer_type == 'conv':
-                block = nn.Sequential(
+                block = [
                     ConvBlock(in_channels=dim, out_channels=dim),
-                    nn.Dropout2d(p=dropout_p)  # spatial dropout for conv
-                )
+                ]
+                
             else:  # layer_type == 'linear'
-                block = nn.Sequential(
+                block = [
                     LinearBlock(in_features=dim, out_features=dim),
-                    nn.Dropout(p=dropout_p)  # regular dropout for linear
-                )
-
-            transformations.append(ResidualBlock(block))
+                ]
+            if use_residual:
+                block = [ResidualBlock(layer) for layer in block]
+            if dropout_p > 0:
+                block.append(nn.Dropout2d(p=dropout_p) if layer_type == 'conv' else nn.Dropout(p=dropout_p))
+                   
+            transformations.append(nn.Sequential(*block))
 
         # Always include the original, unmodified representation
         transformations.append(nn.Identity())
@@ -262,9 +246,24 @@ class SudokuMLPAggregator(Aggregator):
         x = x.view(x.shape[0], -1) # (B, 9*9*9*n_transforms)
         return self.aggregator(x)
 
-@register_loss("sudoku_loss")
-def get_loss_sudoku(predictions, targets, **kwargs):
+@register_loss("cross_entropy_loss")
+def cross_entropy_loss(predictions, targets, **kwargs):
+    """
+    Calculates a cross-entropy loss between the predictions and the targets.
+    """
     return nn.functional.cross_entropy(predictions, targets)
+
+@register_loss("cross_entropy_experts_loss")
+def cross_entropy_experts_loss(expert_predictions, **kwargs):
+    """
+    Calculates a cross-entropy loss between each pair of expert predictions.
+    Used to encourage diversity among the expert predictions.
+    """
+    loss = 0.0
+    ids_combinations = list(itertools.combinations(range(len(expert_predictions)), 2))
+    for i, j in ids_combinations:
+        loss += nn.functional.cross_entropy(expert_predictions[i], expert_predictions[j])
+    return loss / len(ids_combinations)
 
 
 @register_loss("orthonormality_loss")
