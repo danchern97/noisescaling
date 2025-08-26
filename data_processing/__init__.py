@@ -20,7 +20,7 @@ def get_collate_fn(name):
     return COLLATE_FN_REGISTRY.get(name)
 
 @register_dataset("sudoku")
-def load_sudoku(cache_dir, filter_train : int = 55) -> DatasetDict:
+def load_sudoku(cache_dir, filter_train : bool = False) -> DatasetDict:
     """
     Preprocesses the Sudoku (https://huggingface.co/datasets/sapientinc/sudoku-extreme) dataset.
 
@@ -28,7 +28,7 @@ def load_sudoku(cache_dir, filter_train : int = 55) -> DatasetDict:
     
     Args:
         dataset (DatasetDict): The dataset (train, test) to preprocess.
-        filter_train (int, optional): The maximum number of empty cells in the train set to limit the difficulty and study easy-to-hard scaling. Defaults to None.
+        filter_train (bool, optional): Whether to filter the train set from hard problems. Defaults to False.
 
     Returns:
         DatasetDict: The preprocessed dataset.
@@ -50,7 +50,7 @@ def load_sudoku(cache_dir, filter_train : int = 55) -> DatasetDict:
 
     # Filter train set from hard problems
     if filter_train is not None:
-        train_dataset = train_dataset.filter(lambda x: x["empty_cells"] <= filter_train)
+        train_dataset = train_dataset.filter(lambda x: x["source"] in ['puzzles0_kaggle', 'puzzles1_unbiased', 'puzzles2_17_clue'])
     
     # Update the dataset with the new split
     dataset = DatasetDict({
