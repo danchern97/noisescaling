@@ -44,15 +44,40 @@ def log_sudoku_predictions_to_wandb(predictions, targets, inputs, max_samples=4)
         pred_labels = predictions[i].argmax(dim=1).numpy() + 1 # +1 because the predictions are 0-indexed
         target_labels = targets[i].numpy() + 1 # +1 because the targets are 1-indexed
 
-        def grid_to_str(grid):
-            # Replace 0 with '.' for empty cells for better readability
+        def grid_to_str(grid, targets=None):
+            # Use HTML table for predictions to allow coloring
+            html = "<table style='border-collapse: collapse; border: 2px solid black; font-family: monospace;'>"
+            
             grid_str = np.vectorize(lambda x: str(x) if x != 0 else '.')(grid.astype(int))
-            return '\n'.join([' '.join(row) for row in grid_str])
+            
+            for i in range(9):
+                style = "border-top: 1px solid lightgrey;"
+                if i % 3 == 0:
+                    style="border-top: 2px solid black;"
+
+                html += f"<tr style='{style}'>"
+                for j in range(9):
+                    cell_style = "width: 1.5em; height: 1.5em; text-align: center; border-left: 1px solid lightgrey;"
+                    if j % 3 == 0:
+                        cell_style="width: 1.5em; height: 1.5em; text-align: center; border-left: 2px solid black;"
+
+                    cell_value = grid_str[i, j]
+                    if targets is not None and cell_value != '.':
+                        target_value = str(targets[i, j])
+                        if cell_value == target_value:
+                            cell_style += " color: green;"
+                        else:
+                            cell_style += " color: red;"
+                    
+                    html += f"<td style='{cell_style}'>{cell_value}</td>"
+                html += "</tr>"
+            html += "</table>"
+            return wandb.Html(html)
 
         table.add_data(
             i,
             grid_to_str(puzzle),
-            grid_to_str(pred_labels),
+            grid_to_str(pred_labels, targets=target_labels),
             grid_to_str(target_labels)
         )
     
