@@ -19,7 +19,7 @@ class ConvBlock(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size=3, padding="same", no_batch_norm=False):
         super(ConvBlock, self).__init__()
         self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size, padding=padding)
-        self.activation = nn.ReLU()
+        self.activation = nn.ReLU() # nn.GELU()
         if not no_batch_norm:
             self.bn = nn.BatchNorm2d(out_channels)
         
@@ -64,7 +64,7 @@ class ResidualBlock(nn.Module):
         
 @register_model("SudokuCNN")
 class SudokuCNN(nn.Module):
-    def __init__(self, scaler: Optional[nn.Module] = None, aggregator: Optional[nn.Module] = None, scaler_inj_point: int = 3, aggregator_inj_point: int = 7, dropout: float = 0.0, n_mid_layers : int = 1, n_dec_layers : int = 0, **kwargs):
+    def __init__(self, scaler: Optional[nn.Module] = None, aggregator: Optional[nn.Module] = None, scaler_inj_point: int = 3, aggregator_inj_point: int = 7, dropout: float = 0.0, n_mid_layers : int = 1, **kwargs):
         """
         A flexible CNN for Sudoku with fine-grained expert injection points within the decoder.
 
@@ -98,18 +98,13 @@ class SudokuCNN(nn.Module):
             ConvBlock(512, 1024),
             ConvBlock(1024, 9),
             nn.Flatten(),
-            LinearBlock(9*9*9, 512),
-            nn.Dropout(dropout)
-        ])
-        for _ in range(n_dec_layers):
-            self.layers.extend([
-                LinearBlock(512, 512)
-                # nn.Dropout(dropout)
-            ])
-        self.layers.extend([
-            LinearBlock(512, 81 * 9),
+            nn.Linear(9*9*9, 81*9), # 512
+            nn.GELU(),
+            # nn.Dropout(dropout),
+            # nn.Linear(512, 81*9),
+            # nn.GELU(),
             nn.LayerNorm(81 * 9),
-            Reshape((-1, 9, 9, 9)),
+            Reshape((-1, 9, 9, 9))
         ])
         self.layers = nn.ModuleList(self.layers)
 
