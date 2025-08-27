@@ -49,7 +49,7 @@ def load_sudoku(cache_dir, filter_train : bool = False) -> DatasetDict:
     val_dataset = train_val_split["test"].cast_column("empty_cells", Value("int64"))
 
     # Filter train set from hard problems
-    if filter_train is not None:
+    if filter_train:
         train_dataset = train_dataset.filter(lambda x: x["source"] in ['puzzles0_kaggle', 'puzzles1_unbiased', 'puzzles2_17_clue'])
     
     # Update the dataset with the new split
@@ -64,6 +64,6 @@ def load_sudoku(cache_dir, filter_train : bool = False) -> DatasetDict:
 @register_collate_fn("sudoku")
 def collate_fn_sudoku(batch):
     inputs = torch.stack([torch.tensor(list(map(lambda x: 0 if x == '.' else int(x), s['question'])), dtype=torch.float32).reshape(1, 9, 9) for s in batch], dim=0)
-    targets = torch.stack([torch.tensor(list(map(lambda x: int(x), s['answer']))).reshape(9, 9) - 1 for s in batch], dim=0) # -1 because the targets are 1-indexed
+    targets = torch.stack([torch.tensor(list(map(lambda x: int(x), s['answer'])), dtype=torch.long).reshape(9, 9) - 1 for s in batch], dim=0) # -1 because the targets are 1-indexed
     metadata = [{'empty_cells': s['empty_cells'], 'rating': s['rating']} for s in batch]
     return inputs, targets, metadata 
