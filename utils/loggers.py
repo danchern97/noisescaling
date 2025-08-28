@@ -41,7 +41,7 @@ def log_sudoku_predictions_to_wandb(predictions, targets, inputs, max_samples=4)
 
     for i in range(num_samples):
         puzzle = inputs[i].squeeze(0).numpy()
-        pred_labels = predictions[i].argmax(dim=1).numpy() + 1 # +1 because the predictions are 0-indexed
+        pred_labels = predictions[i].argmax(dim=0).numpy() + 1 # +1 because the predictions are 0-indexed
         target_labels = targets[i].numpy() + 1 # +1 because the targets are 1-indexed
 
         def grid_to_str(grid, targets=None):
