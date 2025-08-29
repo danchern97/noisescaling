@@ -35,3 +35,17 @@ def get_accuracy_sudoku(predictions, targets, inputs, dim=1, **kwargs):
     """
     unknown_mask = (inputs == 0).squeeze(dim)
     return (predictions.argmax(dim=dim)[unknown_mask] == targets[unknown_mask]).float().mean()
+
+
+@register_metric("maze_iou")
+def get_maze_iou(predictions, targets, threshold: float = 0.5, **kwargs):
+    """
+    Intersection over Union for binary mask predictions.
+    Expects raw logits in predictions of shape (B, 1, H, W).
+    """
+    probs = torch.sigmoid(predictions)
+    preds_bin = (probs > threshold).float()
+    targets_bin = (targets > 0.5).float()
+    intersection = (preds_bin * targets_bin).sum(dim=(1, 2, 3))
+    union = ((preds_bin + targets_bin) > 0).float().sum(dim=(1, 2, 3)) + 1e-6
+    return (intersection / union).mean()

@@ -250,3 +250,112 @@ def load_iraven(cache_dir, data_dir=None, transform=None, **kwargs) -> DatasetDi
     })
     
     return dataset_dict
+
+
+# -------------------------------
+# Mazes dataset (Lost in MiniMazes)
+# -------------------------------
+
+from PIL import Image
+from torch.utils.data import Dataset
+import os
+import random
+
+
+class _MazesDataset(Dataset):
+    def __init__(self, input_dir: str, target_dir: str, indices=None, transform=None):
+        self.input_dir = input_dir
+        self.target_dir = target_dir
+        self.transform = transform
+
+        # Collect matching files by basename present in both folders
+        input_files = sorted([f for f in os.listdir(input_dir) if f.lower().endswith('.png')])
+        target_files = set([f for f in os.listdir(target_dir) if f.lower().endswith('.png')])
+        self.files = [f for f in input_files if f in target_files]
+
+        if indices is not None:
+            self.files = [self.files[i] for i in indices]
+
+        if len(self.files) == 0:
+            raise RuntimeError(f"No matching PNG files found in '{input_dir}' and '{target_dir}'.")
+
+        if self.transform is None:
+            self.transform = transforms.ToTensor()
+
+    def __len__(self):
+        return len(self.files)
+
+    def __getitem__(self, idx):
+        fname = self.files[idx]
+        inp_path = os.path.join(self.input_dir, fname)
+        tgt_path = os.path.join(self.target_dir, fname)
+
+        # Open as grayscale
+        inp_img = Image.open(inp_path).convert('L')
+        tgt_img = Image.open(tgt_path).convert('L')
+
+        # To [0,1] tensors shaped (1, H, W)
+        inp_tensor = self.transform(inp_img)
+        tgt_tensor = self.transform(tgt_img)
+
+        # Targets should be in {0,1}. If images are 0/255, ToTensor already scales.
+        tgt_tensor = (tgt_tensor > 0.5).float()
+
+        sample = {
+            'input': inp_tensor,
+            'target': tgt_tensor,
+            'filename': fname,
+        }
+        return sample
+
+
+@register_dataset("mazes")
+def load_mazes(cache_dir, seed: int = 42, train_ratio: float = 0.8, val_ratio: float = 0.1, test_ratio: float = 0.1, **kwargs) -> DatasetDict:
+    """
+    Loads the Lost in MiniMazes dataset from a local folder structure:
+      cache_dir/
+        input/
+          000000.png, ...
+        target/
+          000000.png, ...
+
+    Returns a DatasetDict with train/validation/test splits of torch.utils.data.Subset wrapping a torch Dataset.
+    """
+    assert abs(train_ratio + val_ratio - 1.0) < 1e-6 or abs(train_ratio + val_ratio + test_ratio - 1.0) < 1e-6, "Split ratios must sum to 1.0"
+
+    input_dir = os.path.join(cache_dir, 'input')
+    target_dir = os.path.join(cache_dir, 'target')
+
+    base_dataset = _MazesDataset(input_dir=input_dir, target_dir=target_dir)
+
+    total_size = len(base_dataset)
+    indices = list(range(total_size))
+    random.Random(seed).shuffle(indices)
+
+    train_end = int(train_ratio * total_size)
+    if abs(train_ratio + val_ratio - 1.0) < 1e-6:
+        val_end = total_size
+        test_indices = []
+    else:
+        val_end = train_end + int(val_ratio * total_size)
+    train_indices = indices[:train_end]
+    val_indices = indices[train_end:val_end]
+    test_indices = indices[val_end:]
+
+    train_dataset = _MazesDataset(input_dir, target_dir, indices=train_indices)
+    val_dataset = _MazesDataset(input_dir, target_dir, indices=val_indices)
+    test_dataset = _MazesDataset(input_dir, target_dir, indices=test_indices) if len(test_indices) > 0 else _MazesDataset(input_dir, target_dir, indices=val_indices)
+
+    return DatasetDict({
+        'train': Subset(train_dataset, list(range(len(train_dataset)))),
+        'validation': Subset(val_dataset, list(range(len(val_dataset)))),
+        'test': Subset(test_dataset, list(range(len(test_dataset))))
+    })
+
+
+@register_collate_fn("mazes")
+def collate_fn_mazes(batch):
+    inputs = torch.stack([sample['input'] for sample in batch], dim=0)  # (B, 1, 45, 45)
+    targets = torch.stack([sample['target'] for sample in batch], dim=0)  # (B, 1, 45, 45)
+    metadata = [{'filename': sample['filename']} for sample in batch]
+    return inputs, targets, metadata
