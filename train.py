@@ -2,11 +2,14 @@ import torch
 from torch.utils.data import DataLoader
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import LinearLR
+import torch.nn.functional as F
 import yaml
 import argparse
 import wandb
 import os
 from dotenv import load_dotenv
+import numpy as np
+from torchvision.utils import make_grid
 from collections import OrderedDict
 from huggingface_hub import hf_hub_download
 
@@ -133,6 +136,130 @@ def eval_model(model, dataloader, loss_fns, device, metrics):
         results[metric] /= len(dataloader)
     return results
 
+
+_LOGGED_STATIC_RAVEN_IMAGES = False
+_RAVEN_LOGITS_COLUMNS = None
+_RAVEN_LOGITS_ROWS = []
+
+
+def _prepare_raven_example(inputs, predictions, targets):
+    """
+    Build a W&B-friendly example from a single RAVEN batch.
+
+    Inputs shape (tuple):
+      - images: (B, 16, H, W) grayscale in [0,1] or arbitrary
+      - embedding: (B, 6, 300)
+      - indicator: (B, 1)
+    predictions: (B, 8) logits
+    targets: (B,) long
+
+    Returns a dict with a wandb.Image grid and a table of class probabilities/logits.
+    """
+    try:
+        images, embedding, indicator = inputs
+    except Exception:
+        return None
+
+    if not (isinstance(images, torch.Tensor) and images.dim() == 4 and images.size(1) == 16):
+        return None
+
+    # Pick first example in batch
+    img_16 = images[0]  # (16, H, W)
+    target = targets[0].item() if isinstance(targets, torch.Tensor) else int(targets[0])
+    logits = predictions[0].detach().float().cpu()  # (8,)
+    probs = torch.softmax(logits, dim=-1)
+
+    # Panels: first 8 are context (3x3 with one missing), last 8 are answer choices
+    ctx = img_16[:8]   # (8, H, W)
+    ans = img_16[8:]   # (8, H, W)
+
+    def to_three_channel(t_single: torch.Tensor) -> torch.Tensor:
+        # t_single: (H,W) or (C,H,W)
+        if t_single.dim() == 2:
+            t_single = t_single.unsqueeze(0)
+        if t_single.size(0) != 1 and t_single.size(0) != 3:
+            t_single = t_single.mean(dim=0, keepdim=True)
+        # Min-max normalize
+        s_min = t_single.amin(dim=(-2, -1), keepdim=True)
+        s_max = t_single.amax(dim=(-2, -1), keepdim=True)
+        t_single = (t_single - s_min) / (s_max - s_min + 1e-8)
+        if t_single.size(0) == 1:
+            t_single = t_single.repeat(3, 1, 1)
+        return t_single
+
+    def add_border(img: torch.Tensor, border: int = 6, color: float = 1.0) -> torch.Tensor:
+        # img: (3,H,W), add constant border
+        return F.pad(img, (border, border, border, border), value=color)
+
+    # Build 3x3 context grid with last tile blank and thick borders
+    ctx_tiles = [add_border(to_three_channel(ctx[i])) for i in range(8)]
+    c, h, w = ctx_tiles[0].shape
+    blank = add_border(torch.ones(3, h - 12, w - 12)) if (h >= 12 and w >= 12) else add_border(torch.ones(3, max(1, h - 12), max(1, w - 12)))
+    # Recompute shapes after padding
+    c, h, w = ctx_tiles[0].shape
+    row1 = torch.cat(ctx_tiles[0:3], dim=2)
+    row2 = torch.cat(ctx_tiles[3:6], dim=2)
+    row3 = torch.cat([ctx_tiles[6], ctx_tiles[7], blank], dim=2)
+    ctx_grid = torch.cat([row1, row2, row3], dim=1)
+
+    # Build answers grid 2x4 with thick borders
+    ans_tiles = [add_border(to_three_channel(ans[i])) for i in range(8)]
+    row_a1 = torch.cat(ans_tiles[0:4], dim=2)
+    row_a2 = torch.cat(ans_tiles[4:8], dim=2)
+    ans_grid = torch.cat([row_a1, row_a2], dim=1)
+
+    return {
+        "context_grid": wandb.Image(ctx_grid.detach().cpu().permute(1, 2, 0).numpy(), caption="context 3x3 (last empty)"),
+        "answers_grid": wandb.Image(ans_grid.detach().cpu().permute(1, 2, 0).numpy(), caption="answer choices (8)"),
+        "target": target,
+        "pred": int(torch.argmax(probs).item()),
+        "logits": logits.tolist(),
+        "probs": probs.tolist(),
+    }
+
+
+def log_validation_example(run, model, dataloader, device, step: int, prefix: str = "val"):
+    """Log a single RAVEN example (context + answers + probs) to W&B if compatible."""
+    try:
+        batch = next(iter(dataloader))
+    except StopIteration:
+        return
+    except Exception:
+        return
+
+    inputs, targets, _ = batch
+    # Move to device like training loop
+    if isinstance(inputs, tuple):
+        inputs_dev = tuple(inp.to(device) for inp in inputs)
+    elif isinstance(inputs, list):
+        inputs_dev = [inp.to(device) for inp in inputs]
+    else:
+        inputs_dev = inputs.to(device)
+    targets_dev = targets.to(device) if isinstance(targets, torch.Tensor) else targets
+
+    model.eval()
+    with torch.no_grad():
+        model_output = model(inputs_dev)
+        predictions = model_output['predictions'] if isinstance(model_output, dict) else model_output
+
+    example = _prepare_raven_example(inputs, predictions, targets_dev)
+    if example is None:
+        return
+    global _LOGGED_STATIC_RAVEN_IMAGES, _RAVEN_LOGITS_COLUMNS, _RAVEN_LOGITS_ROWS
+    if not _LOGGED_STATIC_RAVEN_IMAGES:
+        run.log({
+            f"{prefix}/example_context": example["context_grid"],
+            f"{prefix}/example_answers": example["answers_grid"],
+        })
+        _LOGGED_STATIC_RAVEN_IMAGES = True
+
+    # Maintain a single W&B table of logits over validation steps by rebuilding from stored rows
+    if _RAVEN_LOGITS_COLUMNS is None:
+        _RAVEN_LOGITS_COLUMNS = ["step"] + [f"logit_{i}" for i in range(8)]
+    _RAVEN_LOGITS_ROWS.append([int(step)] + [float(x) for x in example["logits"]])
+    table = wandb.Table(data=_RAVEN_LOGITS_ROWS, columns=_RAVEN_LOGITS_COLUMNS)
+    run.log({f"{prefix}/example_logits_table": table})
+
 def train_model(config):
     # Load environment variables
     load_dotenv(dotenv_path='.env')
@@ -255,6 +382,9 @@ def train_model(config):
     logger.info(log_msg)
     log_dict = {f"val/{k}": v for k, v in eval_results.items()}
     run.log(log_dict)
+    # Also log a qualitative example at the beginning
+    if 'validation' in dataloaders:
+        log_validation_example(run, model, dataloaders['validation'], device, step=0, prefix="val")
 
 
     model.train()
@@ -321,6 +451,8 @@ def train_model(config):
                 logger.info(log_msg)
                 log_dict = {f"val/{k}": v for k, v in eval_results.items()}
                 run.log(log_dict)
+                # Log a qualitative example periodically
+                log_validation_example(run, model, dataloaders['validation'], device, step=step, prefix="val")
                 
                 # Save model checkpoint
                 model_path = os.path.join(model_dir, f"model_{step}.pt")
