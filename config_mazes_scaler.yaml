@@ -4,16 +4,27 @@ dataset:
 
 model:
   name: MazeAutoencoder
+  injection_point: "mazes3"  # maze-specific injection naming
   args:
     latent_dim: 256
     base_channels: 64
     dropout: 0.3
+  scaler:
+    name: MazeStaticScaler
+    args:
+      n_transforms: 4
+      layer_type: conv
+      dim: 512  # will be overridden by train.py if needed
+      dropout: 0.2
+  aggregator:
+    name: MeanAggregator
+    args: {}
   losses:
     - name: maze_bce
       weight: 1.0
 
 training:
-  experiment_name: mazes_autoencoder_v1
+  experiment_name: mazes_autoencoder_scaler_v1
   batch_size: 64
   num_workers: 4
   seed: 42
