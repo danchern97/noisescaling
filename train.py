@@ -294,7 +294,8 @@ def train_model(config):
         scaler_config = model_config['scaler']
         scaler_args = scaler_config.get('args', {})
 
-        if injection_point is not None:
+        # Numeric injection points are used by Sudoku to size conv scalers
+        if injection_point in {'0', '1', '2', '3', '4'}:
             if injection_point == '0':
                 scaler_args['layer_type'] = 'conv'
                 scaler_args['dim'] = 256  # number of channels
@@ -310,14 +311,13 @@ def train_model(config):
             elif injection_point == '4':
                 scaler_args['layer_type'] = 'conv'
                 scaler_args['dim'] = 9
-
-            else:
-                raise ValueError(f"Unsupported injection_point: {injection_point}")
-            
             logger.info(f"Using scaler at injection point: {injection_point} with args: {scaler_args}")
             scaler = get_model_by_name(scaler_config['name'], **scaler_args)
         else:
-            # Instantiate scaler without injection-specific args (e.g., for RAVEN embedding scaler)
+            # For non-numeric points (e.g., RAVEN: 'embedding', 'image', 'pre_tree', 'post_tree')
+            # or when injection_point is omitted, just instantiate as-is.
+            if injection_point is not None:
+                logger.info(f"Using scaler at injection point: {injection_point} (no special args)")
             scaler = get_model_by_name(scaler_config['name'], **scaler_args)
 
     if model_config.get('aggregator', None):
