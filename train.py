@@ -218,6 +218,54 @@ def _prepare_raven_example(inputs, predictions, targets):
     }
 
 
+def _prepare_maze_example(inputs, predictions, targets):
+    """
+    Build W&B images for a Maze sample: input maze, target mask, predicted mask, overlay.
+
+    inputs: (B, 1, H, W) in [0,1]
+    predictions: (B, 1, H, W) logits
+    targets: (B, 1, H, W) in {0,1}
+    """
+    if not (isinstance(inputs, torch.Tensor) and inputs.dim() == 4 and inputs.size(1) == 1):
+        return None
+
+    # pick first sample
+    x = inputs[0].detach().float().cpu()          # (1,H,W)
+    y_logits = predictions[0].detach().float().cpu()
+    y_probs = torch.sigmoid(y_logits)              # (1,H,W)
+    y_pred = (y_probs > 0.5).float()
+    y_true = targets[0].detach().float().cpu()
+
+    # normalize input to [0,1]
+    x_min = x.amin(dim=(-2, -1), keepdim=True)
+    x_max = x.amax(dim=(-2, -1), keepdim=True)
+    x_norm = (x - x_min) / (x_max - x_min + 1e-8)
+    base = x_norm.repeat(3, 1, 1)                  # (3,H,W)
+
+    # create colored overlays
+    alpha_bkg, alpha_mask = 0.7, 0.6
+    overlay = base.clone()
+    # red channel for predicted
+    overlay[0] = torch.clamp(overlay[0] * alpha_bkg + y_pred[0] * alpha_mask, 0.0, 1.0)
+    # green channel for target
+    overlay[1] = torch.clamp(overlay[1] * alpha_bkg + y_true[0] * alpha_mask, 0.0, 1.0)
+    # blue stays dimmed background
+    overlay[2] = overlay[2] * alpha_bkg
+
+    def to_img(t3: torch.Tensor, caption: str):
+        img = t3.detach().cpu().permute(1, 2, 0).numpy()
+        return wandb.Image(img, caption=caption)
+
+    images = {
+        "maze/input": to_img(base, "input"),
+        "maze/pred_mask": to_img(y_pred.repeat(3, 1, 1), "prediction (mask)"),
+        "maze/target_mask": to_img(y_true.repeat(3, 1, 1), "target (mask)"),
+        "maze/overlay": to_img(overlay, "overlay: red=pred, green=target"),
+    }
+
+    return images
+
+
 def log_validation_example(run, model, dataloader, device, step: int, prefix: str = "val"):
     """Log a single RAVEN example (context + answers + probs) to W&B if compatible."""
     try:
@@ -242,23 +290,36 @@ def log_validation_example(run, model, dataloader, device, step: int, prefix: st
         model_output = model(inputs_dev)
         predictions = model_output['predictions'] if isinstance(model_output, dict) else model_output
 
-    example = _prepare_raven_example(inputs, predictions, targets_dev)
-    if example is None:
-        return
-    global _LOGGED_STATIC_RAVEN_IMAGES, _RAVEN_LOGITS_COLUMNS, _RAVEN_LOGITS_ROWS
-    if not _LOGGED_STATIC_RAVEN_IMAGES:
-        run.log({
-            f"{prefix}/example_context": example["context_grid"],
-            f"{prefix}/example_answers": example["answers_grid"],
-        })
-        _LOGGED_STATIC_RAVEN_IMAGES = True
+    # Try RAVEN visualization first
+    example_raven = _prepare_raven_example(inputs, predictions, targets_dev)
+    if example_raven is not None:
+        global _LOGGED_STATIC_RAVEN_IMAGES, _RAVEN_LOGITS_COLUMNS, _RAVEN_LOGITS_ROWS
+        if not _LOGGED_STATIC_RAVEN_IMAGES:
+            run.log({
+                f"{prefix}/example_context": example_raven["context_grid"],
+                f"{prefix}/example_answers": example_raven["answers_grid"],
+            })
+            _LOGGED_STATIC_RAVEN_IMAGES = True
 
-    # Maintain a single W&B table of logits over validation steps by rebuilding from stored rows
-    if _RAVEN_LOGITS_COLUMNS is None:
-        _RAVEN_LOGITS_COLUMNS = ["step"] + [f"logit_{i}" for i in range(8)]
-    _RAVEN_LOGITS_ROWS.append([int(step)] + [float(x) for x in example["logits"]])
-    table = wandb.Table(data=_RAVEN_LOGITS_ROWS, columns=_RAVEN_LOGITS_COLUMNS)
-    run.log({f"{prefix}/example_logits_table": table})
+        # Maintain a single W&B table of logits over validation steps by rebuilding from stored rows
+        if _RAVEN_LOGITS_COLUMNS is None:
+            _RAVEN_LOGITS_COLUMNS = ["step"] + [f"logit_{i}" for i in range(8)]
+        _RAVEN_LOGITS_ROWS.append([int(step)] + [float(x) for x in example_raven["logits"]])
+        table = wandb.Table(data=_RAVEN_LOGITS_ROWS, columns=_RAVEN_LOGITS_COLUMNS)
+        run.log({f"{prefix}/example_logits_table": table})
+        return
+
+    # Otherwise, try Maze visualization
+    example_maze = _prepare_maze_example(inputs_dev if isinstance(inputs, torch.Tensor) else inputs, predictions, targets_dev)
+    if example_maze is not None:
+        # Log all images under a single step
+        run.log({f"{prefix}/example_maze_input": example_maze["maze/input"],
+                 f"{prefix}/example_maze_pred": example_maze["maze/pred_mask"],
+                 f"{prefix}/example_maze_target": example_maze["maze/target_mask"],
+                 f"{prefix}/example_maze_overlay": example_maze["maze/overlay"],
+                 "step": int(step)})
+        return
+    # If neither format matches, do nothing
 
 def train_model(config):
     # Load environment variables
@@ -294,24 +355,52 @@ def train_model(config):
         scaler_config = model_config['scaler']
         scaler_args = scaler_config.get('args', {})
 
-        # Numeric injection points are used by Sudoku to size conv scalers
-        if injection_point in {'0', '1', '2', '3', '4'}:
-            if injection_point == '0':
-                scaler_args['layer_type'] = 'conv'
-                scaler_args['dim'] = 256  # number of channels
-            elif injection_point == '1':
-                scaler_args['layer_type'] = 'conv'
-                scaler_args['dim'] = 512
-            elif injection_point == '2':
-                scaler_args['layer_type'] = 'conv'
-                scaler_args['dim'] = 512
-            elif injection_point == '3':
-                scaler_args['layer_type'] = 'conv'
-                scaler_args['dim'] = 1024
-            elif injection_point == '4':
-                scaler_args['layer_type'] = 'conv'
-                scaler_args['dim'] = 9
-            logger.info(f"Using scaler at injection point: {injection_point} with args: {scaler_args}")
+        # Support numeric (Sudoku) and maze-specific names like 'mazes0'..'mazes4'
+        normalized_ip = None
+        if isinstance(injection_point, str):
+            if injection_point.startswith('mazes'):
+                normalized_ip = injection_point.replace('mazes', '')
+            else:
+                normalized_ip = injection_point
+
+        if normalized_ip in {'0', '1', '2', '3', '4'}:
+            model_name = model_config.get('name')
+            # Set conv-scaler channel dims based on the model and injection point
+            if model_name == 'SudokuCNN':
+                if normalized_ip == '0':
+                    scaler_args['layer_type'] = 'conv'
+                    scaler_args['dim'] = 256
+                elif normalized_ip == '1':
+                    scaler_args['layer_type'] = 'conv'
+                    scaler_args['dim'] = 512
+                elif normalized_ip == '2':
+                    scaler_args['layer_type'] = 'conv'
+                    scaler_args['dim'] = 512
+                elif normalized_ip == '3':
+                    scaler_args['layer_type'] = 'conv'
+                    scaler_args['dim'] = 1024
+                elif normalized_ip == '4':
+                    scaler_args['layer_type'] = 'conv'
+                    scaler_args['dim'] = 9
+            elif model_name == 'MazeAutoencoder':
+                base_channels = model_config.get('args', {}).get('base_channels', 64)
+                latent_dim_arg = model_config.get('args', {}).get('latent_dim', 128)
+                if normalized_ip == '0':
+                    scaler_args['layer_type'] = 'conv'
+                    scaler_args['dim'] = base_channels                 # e1: c1
+                elif normalized_ip == '1':
+                    scaler_args['layer_type'] = 'conv'
+                    scaler_args['dim'] = base_channels * 2             # e2: c2
+                elif normalized_ip == '2':
+                    scaler_args['layer_type'] = 'conv'
+                    scaler_args['dim'] = base_channels * 4             # e3: c3
+                elif normalized_ip == '3':
+                    scaler_args['layer_type'] = 'conv'
+                    scaler_args['dim'] = base_channels * 8             # e4: c4
+                elif normalized_ip == '4':
+                    scaler_args['layer_type'] = 'conv'
+                    scaler_args['dim'] = latent_dim_arg                # z
+            logger.info(f"Using scaler at injection point: {injection_point} (normalized {normalized_ip}) with args: {scaler_args}")
             scaler = get_model_by_name(scaler_config['name'], **scaler_args)
         else:
             # For non-numeric points (e.g., RAVEN: 'embedding', 'image', 'pre_tree', 'post_tree')
