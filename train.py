@@ -181,7 +181,7 @@ def train_model(config, sweep_args=None):
             pretrained_path = model_config['pretrained_path']
 
         logger.info(f"Loading pretrained weights from {pretrained_path}")
-        state_dict = load_state_dict(pretrained_path, version=model_config.get('pretrained_version'))
+        state_dict = torch.load(pretrained_path)
         missing, unexpected = model.load_state_dict(state_dict, strict=False)
         logger.warning(f"Missing keys: {missing}")
         logger.warning(f"Unexpected keys: {unexpected}")
