@@ -124,21 +124,26 @@ class SudokuCNN(nn.Module):
         
 
     def forward(self, x: torch.Tensor) -> dict[str, torch.Tensor]:
-        """Defines the data flow with precise injection points."""
         outputs = {}
+    # Apply scaler at the injection point
         for i, layer in enumerate(self.layers):
-            if self.scaler is not None and i == self.scaler_inj_point: # Scale the representation x -> list[x]
+            if self.scaler is not None and i == self.scaler_inj_point:
                 x = self.scaler(x)
-            if self.aggregator is not None and i == self.aggregator_inj_point: # Aggregate the representations list[x] -> x
-                outputs['expert_representations'] = x
-                outputs['expert_predictions'] = x # Keep track of expert representations until the prediction
-                x = self.aggregator(x)
+                print(f"After scaler at layer {i}: {x.shape}")
+        # If x is a tensor with shape [B, n_experts, ...], convert to list of experts
+            if isinstance(x, torch.Tensor) and x.dim() > 4:
+                x = [x[:, j] for j in range(x.shape[1])]
+        # Process each expert through the layer
             if isinstance(x, list):
                 x = [layer(x_repr) for x_repr in x]
             else:
                 x = layer(x)
-                if 'expert_predictions' in outputs: # Apply the same transformation to the expert representations to decode them to predictions
-                    outputs['expert_predictions'] = [layer(x_repr) for x_repr in outputs['expert_predictions']]
+    # Aggregate at the end if aggregator is present
+        if self.aggregator is not None:
+            print(f"Before aggregator at end: {[xx.shape for xx in x]}")
+            x = self.aggregator(torch.stack(x, dim=1))
+            print(f"After aggregator at end: {x.shape}")
+            outputs['expert_representations'] = x
         outputs['predictions'] = x
         return outputs
 
