@@ -19,7 +19,7 @@ class ConvBlock(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size=3, padding="same", no_batch_norm=False):
         super(ConvBlock, self).__init__()
         self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size, padding=padding)
-        self.activation = nn.ReLU() # nn.GELU()
+        self.activation = nn.ReLU() # nn.GELU() works similarly here
         if not no_batch_norm:
             self.bn = nn.BatchNorm2d(out_channels)
         
@@ -98,8 +98,8 @@ class SudokuCNN(nn.Module):
             ConvBlock(512, 1024),
             ConvBlock(1024, 9),
             nn.Flatten(),
-            nn.Linear(9*9*9, 81*9), # 512
-            nn.GELU(),
+            nn.Linear(9*9*9, 81*9), # Change to 512 if you want the longer decoder, but it performs worse
+            nn.GELU(), # nn.ReLU() works very BADLY here
             # nn.Dropout(dropout),
             # nn.Linear(512, 81*9),
             # nn.GELU(),
@@ -234,7 +234,7 @@ class SudokuMLPAggregator(Aggregator):
         super(SudokuMLPAggregator, self).__init__()
         self.aggregator = nn.Sequential(
             nn.Linear(9*9*9*n_transforms, 9*9*9),
-            nn.ReLU(),
+            nn.GELU(),
         )
 
     def forward(self, x):

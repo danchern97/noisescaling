@@ -1,12 +1,12 @@
 training:
-  experiment_name: "sudoku-deep-baseline-midlayers=1-dropout=0.5-batchsize=256-lr=0.005-filter_train=true"
+  experiment_name: "sudoku-deep-baseline-midlayers=3-dropout=0.5-batchsize=256-lr=0.001-short-decoder-relu"
   # Hardware parameters
   num_workers: 4 # Number of workers for dataloader
   device: "cuda:0" # Device to use for training
   # Training parameters
   batch_size: 256
-  learning_rate: 0.005
-  epochs: 500
+  learning_rate: 0.001
+  epochs: 20
   # scheduler:
   #   name: "linear"
   #   args:
@@ -29,12 +29,12 @@ training:
 dataset:
   name: "sudoku"
   path: "/var/scratch/dchernia/sudoku"
-  filter_train: true
+  args:
+    filter_train: false
 
 model:
   name: "SudokuCNN"
   losses: [{"name": "cross_entropy_loss", "weight": 1.0}]
   args:
     dropout: 0.5
-    n_mid_layers: 1
-    n_dec_layers: 0
+    n_mid_layers: 3

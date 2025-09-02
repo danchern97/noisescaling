@@ -40,7 +40,7 @@ def get_model_by_name(model_name : str, **kwargs):
 
 def get_dataloaders(config):
     dataset_fn = DATASET_REGISTRY[config['dataset']['name']]
-    dataset = dataset_fn(cache_dir=config['dataset']['path'])
+    dataset = dataset_fn(cache_dir=config['dataset']['path'], **config['dataset'].get('args', {}))
     collate_fn = get_collate_fn(config['dataset']['name'])
     dataloaders = {}
     for split in ['train', 'validation', 'test']:
@@ -61,44 +61,6 @@ def run_metrics(predictions, targets, model, inputs, device, metrics, results=No
     for metric in metrics:
         results[metric] += METRIC_REGISTRY[metric](predictions=predictions, targets=targets, model=model, inputs=inputs, device=device).item()
     return results
-
-# def load_state_dict(path, version=None):
-    
-#     saved_state_dict = torch.load(path)
-
-#     if version:
-        
-#         new_state_dict = OrderedDict()
-
-#         if version == 'baseline':
-
-#             for old_key, value in saved_state_dict.items():
-                
-#                 new_key = old_key
-
-#                 # --- CORE RENAMING LOGIC for the 'mid' layers ---
-#                 if old_key.startswith('mid.0.'):
-#                     # Replace 'mid.0.' with 'mid_1.'
-#                     new_key = old_key.replace('mid.0.', 'mid_1.', 1)
-#                 elif old_key.startswith('mid.1.'):
-#                     # Replace 'mid.1.' with 'mid_2.'
-#                     new_key = old_key.replace('mid.1.', 'mid_2.', 1)
-#                 elif old_key.startswith('mid.2.'):
-#                     # Replace 'mid.2.' with 'mid_3.'
-#                     new_key = old_key.replace('mid.2.', 'mid_3.', 1)
-#                 elif old_key.startswith('mid.3.'):
-#                     # Replace 'mid.3.' with 'mid_4.'
-#                     new_key = old_key.replace('mid.3.', 'mid_4.', 1)
-
-#                 print(f"Mapping '{old_key}' to '{new_key}'")
-#                 new_state_dict[new_key] = value
-
-#         else:
-#             raise ValueError(f"Version {version} not implemented to load state dict.")
-
-#         saved_state_dict = new_state_dict
-
-#     return saved_state_dict
 
 def eval_model(model, dataloader, loss_fns, device, metrics, log_prefix=None, config=None):
     model.eval()

@@ -27,11 +27,12 @@ def log_sudoku_predictions_to_wandb(predictions, targets, inputs, max_samples=4)
 
     num_samples = min(max_samples, predictions.size(0))
     # # Pick random samples if num_samples is greater than the number of samples
-    # if num_samples > predictions.size(0):
-    #     indices = np.random.choice(predictions.size(0), num_samples, replace=False)
-    #     predictions = predictions[indices]
-    #     targets = targets[indices]
-    #     inputs = inputs[indices]
+    # For reproducibility, use a fixed seed to select the same random samples each time.
+    generator = torch.Generator().manual_seed(42)
+    indices = torch.randperm(predictions.size(0), generator=generator)[:num_samples]
+    predictions = predictions[indices]
+    targets = targets[indices]
+    inputs = inputs[indices]
 
     if num_samples == 0:
         return
