@@ -24,7 +24,6 @@ import glob
 def cleanup_checkpoints(model_dir, logger, keep_last=5):
     checkpoints = sorted(
         glob.glob(os.path.join(model_dir, "model_*.pt")),
-        key=os.path.getmtime
     )
     if len(checkpoints) > keep_last:
         for ckpt in checkpoints[:-keep_last]:
@@ -61,6 +60,12 @@ def run_metrics(predictions, targets, model, inputs, device, metrics, results=No
     for metric in metrics:
         results[metric] += METRIC_REGISTRY[metric](predictions=predictions, targets=targets, model=model, inputs=inputs, device=device).item()
     return results
+
+def load_state_dict(path, version=None):
+    
+    saved_state_dict = torch.load(path)
+
+    return saved_state_dict
 
 def eval_model(model, dataloader, loss_fns, device, metrics, log_prefix=None, config=None):
     model.eval()
