@@ -133,7 +133,7 @@ class SudokuCNN(nn.Module):
             # This will typically transform x from [B, C, H, W] to [B, n_experts, C, H, W]
             if self.scaler is not None and i == self.scaler_inj_point:
                 x = self.scaler(x)
-                print(f"After scaler at layer {i}: {x.shape if isinstance(x, torch.Tensor) else [xx.shape for xx in x]}")
+                #print(f"After scaler at layer {i}: {x.shape if isinstance(x, torch.Tensor) else [xx.shape for xx in x]}")
 
             # --- 2. Aggregator Injection ---
             # If we are at the aggregator injection point, apply the aggregator.
@@ -144,11 +144,11 @@ class SudokuCNN(nn.Module):
                      raise TypeError(f"Aggregator was called at layer {i}, but the input is not a list of experts. "
                                      "Ensure scaler_inj_point comes before aggregator_inj_point.")
                 
-                print(f"Before aggregator at layer {i}: {[xx.shape for xx in x]}")
+                #print(f"Before aggregator at layer {i}: {[xx.shape for xx in x]}")
                 # Stack the list into a single tensor [B, n_experts, ...] and aggregate
                 x_stacked = torch.stack(x, dim=1)
                 x = self.aggregator(x_stacked)
-                print(f"After aggregator at layer {i}: {x.shape}")
+                #print(f"After aggregator at layer {i}: {x.shape}")
                 
                 # Store the result of the aggregation as the expert representation
                 outputs['expert_representations'] = x
