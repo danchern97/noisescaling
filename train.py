@@ -313,11 +313,29 @@ def log_validation_example(run, model, dataloader, device, step: int, prefix: st
     example_maze = _prepare_maze_example(inputs_dev if isinstance(inputs, torch.Tensor) else inputs, predictions, targets_dev)
     if example_maze is not None:
         # Log all images under a single step
-        run.log({f"{prefix}/example_maze_input": example_maze["maze/input"],
-                 f"{prefix}/example_maze_pred": example_maze["maze/pred_mask"],
-                 f"{prefix}/example_maze_target": example_maze["maze/target_mask"],
-                 f"{prefix}/example_maze_overlay": example_maze["maze/overlay"],
-                 "step": int(step)})
+        log_payload = {f"{prefix}/example_maze_input": example_maze["maze/input"],
+                       f"{prefix}/example_maze_pred": example_maze["maze/pred_mask"],
+                       f"{prefix}/example_maze_target": example_maze["maze/target_mask"],
+                       f"{prefix}/example_maze_overlay": example_maze["maze/overlay"],
+                       "step": int(step)}
+
+        # If model supports per-expert predictions, log them as well
+        try:
+            if hasattr(model, 'predict_per_expert') and callable(getattr(model, 'predict_per_expert')):
+                per_expert = model.predict_per_expert(inputs_dev if isinstance(inputs, torch.Tensor) else inputs)
+                # per_expert: (B, n_experts, 1, H, W) logits
+                per_expert = torch.sigmoid(per_expert[0].detach().cpu())  # (n_experts, 1, H, W)
+                n_exp = per_expert.shape[0]
+                # Build grid of expert predictions as separate images
+                for i in range(n_exp):
+                    exp_img = per_expert[i].repeat(3, 1, 1)  # 3-channel mask
+                    img = exp_img.permute(1, 2, 0).numpy()
+                    log_payload[f"{prefix}/experts/exp_{i:02d}"] = wandb.Image(img, caption=f"expert {i}")
+        except Exception:
+            print("Failed to log per-expert predictions")
+            pass
+
+        run.log(log_payload)
         return
     # If neither format matches, do nothing
 
@@ -558,6 +576,8 @@ def train_model(config):
         logger.info(f"Test results: {eval_results}")
         eval_results = {f"test/{k}": v for k, v in eval_results.items()}
         run.log(eval_results)
+        # Log a qualitative example from the test set at the end
+        log_validation_example(run, model, dataloaders['test'], device, step=step, prefix="test")
 
     # Finish the wandb run
     run.finish()

@@ -181,6 +181,34 @@ class MazeAutoencoder(nn.Module):
     def compile(self):
         return None
 
+    @torch.no_grad()
+    def predict_per_expert(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Returns stacked predictions for each expert without aggregation.
+        Shape: (B, n_experts, 1, H, W)
+        """
+        if self.scaler is None or self.aggregator is None or self.injection_point is None:
+            # No experts configured
+            out = self.forward(x)
+            y = out['predictions'] if isinstance(out, dict) else out
+            return y.unsqueeze(1)
+
+        e1 = self.enc1(x)
+        p1 = self.pool1(e1)
+        e2 = self.enc2(p1)
+        p2 = self.pool2(e2)
+        e3 = self.enc3(p2)
+        p3 = self.pool3(e3)
+        e4 = self.enc4(p3)
+        z = self.bottleneck(e4)
+
+        normalized_ip = self.injection_point
+        if isinstance(normalized_ip, str) and normalized_ip.startswith('mazes'):
+            normalized_ip = normalized_ip.replace('mazes', '')
+
+        stacked_preds, _ = self._forward_from_injection(normalized_ip, (e1, e2, e3, e4, z))
+        return stacked_preds
+
 
 @register_loss("maze_bce")
 def maze_bce_loss(predictions: torch.Tensor, targets: torch.Tensor, **kwargs):
