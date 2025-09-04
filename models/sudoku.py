@@ -109,7 +109,7 @@ class SudokuCNN(nn.Module):
         self.layers = nn.ModuleList(self.layers)
 
         # -- Validate the scaler and aggregator --
-        if (scaler is not None and aggregator is None) or (scaler is None and aggregator is not None):
+        if ((scaler is not None) and (aggregator is None)) or ((scaler is None) and (aggregator is not None)):
             raise ValueError("Scaler and aggregator must be either both None or both not None")
 
         if scaler is not None:
@@ -117,6 +117,7 @@ class SudokuCNN(nn.Module):
                 self.scaler_inj_point = scaler_inj_point
             else:
                 raise ValueError(f"Invalid scaler_inj_point '{scaler_inj_point}'. Must be between 0 and {len(self.layers) - 1}")
+
             if scaler_inj_point < aggregator_inj_point < len(self.layers):
                 self.aggregator_inj_point = aggregator_inj_point
             else:
@@ -125,25 +126,48 @@ class SudokuCNN(nn.Module):
 
     def forward(self, x: torch.Tensor) -> dict[str, torch.Tensor]:
         outputs = {}
-    # Apply scaler at the injection point
+
         for i, layer in enumerate(self.layers):
+            # --- 1. Scaler Injection ---
+            # If we are at the scaler injection point, apply the scaler.
+            # This will typically transform x from [B, C, H, W] to [B, n_experts, C, H, W]
             if self.scaler is not None and i == self.scaler_inj_point:
                 x = self.scaler(x)
-                print(f"After scaler at layer {i}: {x.shape}")
-        # If x is a tensor with shape [B, n_experts, ...], convert to list of experts
+                print(f"After scaler at layer {i}: {x.shape if isinstance(x, torch.Tensor) else [xx.shape for xx in x]}")
+
+            # --- 2. Aggregator Injection ---
+            # If we are at the aggregator injection point, apply the aggregator.
+            # This will transform x from a list of experts back to a single tensor.
+            if self.aggregator is not None and i == self.aggregator_inj_point:
+                # The aggregator expects to work on a list of tensors.
+                if not isinstance(x, list):
+                     raise TypeError(f"Aggregator was called at layer {i}, but the input is not a list of experts. "
+                                     "Ensure scaler_inj_point comes before aggregator_inj_point.")
+                
+                print(f"Before aggregator at layer {i}: {[xx.shape for xx in x]}")
+                # Stack the list into a single tensor [B, n_experts, ...] and aggregate
+                x_stacked = torch.stack(x, dim=1)
+                x = self.aggregator(x_stacked)
+                print(f"After aggregator at layer {i}: {x.shape}")
+                
+                # Store the result of the aggregation as the expert representation
+                outputs['expert_representations'] = x
+
+            # --- 3. Layer Application ---
+            # This logic handles both normal processing and expert-wise processing.
+
+            # If x is a 5D tensor (from scaler), convert it to a list of experts for processing.
             if isinstance(x, torch.Tensor) and x.dim() > 4:
                 x = [x[:, j] for j in range(x.shape[1])]
-        # Process each expert through the layer
+
+            # If x is a list, apply the current layer to each expert individually.
             if isinstance(x, list):
                 x = [layer(x_repr) for x_repr in x]
+            # Otherwise, apply the layer to the single tensor.
             else:
                 x = layer(x)
-    # Aggregate at the end if aggregator is present
-        if self.aggregator is not None:
-            print(f"Before aggregator at end: {[xx.shape for xx in x]}")
-            x = self.aggregator(torch.stack(x, dim=1))
-            print(f"After aggregator at end: {x.shape}")
-            outputs['expert_representations'] = x
+
+        # The final state of x after all layers is the prediction.
         outputs['predictions'] = x
         return outputs
 

@@ -34,14 +34,17 @@ model:
     dropout: 0.5
     n_mid_layers: 1
     n_dec_layers: 0
+
   scaler:
     name: "SudokuStaticScaler"
+    inj_point: 0
     args:
       n_transforms: 2
-      scaler_inj_point: 0
+      dim: 128
+
   aggregator:
     name: "AttentionAggregator"
+    inj_point: 4
     args:
       aggregate_dim: 1
       in_features: 729
-      aggregator_inj_point: 4
