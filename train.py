@@ -373,11 +373,13 @@ def train_model(config):
         scaler_config = model_config['scaler']
         scaler_args = scaler_config.get('args', {})
 
-        # Support numeric (Sudoku) and maze-specific names like 'mazes0'..'mazes4'
+        # Support numeric (Sudoku) and maze-specific names like 'mazes0'..'mazes4' and 'mazesbig0'..'mazesbig4'
         normalized_ip = None
         if isinstance(injection_point, str):
             if injection_point.startswith('mazes'):
                 normalized_ip = injection_point.replace('mazes', '')
+            elif injection_point.startswith('mazesbig'):
+                normalized_ip = injection_point.replace('mazesbig', '')
             else:
                 normalized_ip = injection_point
 
@@ -400,7 +402,7 @@ def train_model(config):
                 elif normalized_ip == '4':
                     scaler_args['layer_type'] = 'conv'
                     scaler_args['dim'] = 9
-            elif model_name == 'MazeAutoencoder':
+            elif model_name == 'MazeAutoencoder' or model_name == 'MazesBigAutoencoder':
                 base_channels = model_config.get('args', {}).get('base_channels', 64)
                 latent_dim_arg = model_config.get('args', {}).get('latent_dim', 128)
                 if normalized_ip == '0':

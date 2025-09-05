@@ -1,0 +1,26 @@
+dataset:
+  name: MazesBig
+  path: /home/wkosiuk/ARC/noisescaling/mazes-big-data
+
+model:
+  name: MazesBigAutoencoder
+  args:
+    latent_dim: 256
+    base_channels: 64
+    dropout: 0.3
+  losses:
+    - name: maze_bce
+      weight: 1.0
+
+training:
+  experiment_name: mazes_big_v2
+  batch_size: 64
+  num_workers: 4
+  seed: 42
+  epochs: 50
+  learning_rate: 0.0005
+  eval_interval: 50
+  training_metrics: ["maze_iou"]
+  validation_metrics: ["maze_iou"]
+  device: cuda:0
+
