@@ -9,8 +9,7 @@ from dotenv import load_dotenv
 
 from data_processing import DATASET_REGISTRY, get_collate_fn
 from models import MODEL_REGISTRY, LOSS_REGISTRY
-from utils import count_trainable_parameters, set_seed
-from utils.logger import get_logger
+from utils import count_trainable_parameters, set_seed, get_logger
 from utils.metrics import METRIC_REGISTRY
 from tqdm.auto import tqdm
 

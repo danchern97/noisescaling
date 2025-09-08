@@ -2,35 +2,49 @@ training:
   batch_size: 1024
   num_workers: 4
   batch_size: 256
-  learning_rate: 0.0056
+  learning_rate: 0.005
   epochs: 1
   eval_interval: 500
   device: "cuda:0"
-  experiment_name: "sudoku-b-res-scaler-attention-orth01-2-3"
-  training_metrics: ["accuracy", "accuracy_sudoku"]
-  validation_metrics: ["accuracy", "accuracy_sudoku"]
+  experiment_name: "sudoku-b-att-6-11"
+  training_metrics: ["accuracy", "accuracy_unknown_cells"]
+  validation_metrics: ["accuracy", "accuracy_unknown_cells"]
+  checkpoint_metric:
+    name: "accuracy_unknown_cells"
+    mode: "max" 
+  logger: "sudoku_logger"
+  max_samples_to_log: 16 
   seed: 42
   scaler_regime: "partial" # "partial" (only scaler and aggregator are trained) or "full" (all parameters are trained)
-  
+
 dataset:
   name: "sudoku"
   path: "./data/sudoku"
+  args:
+    filter_train: true
 
 model:
   name: "SudokuCNN"
-  injection_point: "3"
-  losses: [{"name": "sudoku_loss", "weight": 1.0}, 
-           {"name": "orthonormality_loss", "weight": 0.05}
+  losses: [{"name": "cross_entropy_loss", "weight": 1.0}, 
+           #{"name": "orthonormality_loss", "weight": 0.05}
            ]
+
   pretrained_path: "sudoku/sudoku_baseline/best_model.pt"
   pretrained_from_hf: "danchern/noisescaling"
-  pretrained_version: baseline
+  args:
+    dropout: 0.5
+    n_mid_layers: 3
+    n_dec_layers: 0
+
   scaler:
     name: "SudokuStaticScaler"
+    inj_point: 6
     args:
       n_transforms: 2
+      dim: 512
   aggregator:
     name: "AttentionAggregator"
+    inj_point: 11
     args:
       aggregate_dim: 1
       in_features: 729

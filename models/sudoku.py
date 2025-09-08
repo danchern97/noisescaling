@@ -131,8 +131,11 @@ class SudokuCNN(nn.Module):
             # --- 1. Scaler Injection ---
             # If we are at the scaler injection point, apply the scaler.
             # This will typically transform x from [B, C, H, W] to [B, n_experts, C, H, W]
+            #print(f"Layer {i}: {layer.__class__.__name__}")
+            #print(f"Input shape: {x.shape if isinstance(x, torch.Tensor) else [xx.shape for xx in x]}")
             if self.scaler is not None and i == self.scaler_inj_point:
                 x = self.scaler(x)
+                outputs['scaler_representations'] = x
                 #print(f"After scaler at layer {i}: {x.shape if isinstance(x, torch.Tensor) else [xx.shape for xx in x]}")
 
             # --- 2. Aggregator Injection ---
@@ -147,11 +150,12 @@ class SudokuCNN(nn.Module):
                 #print(f"Before aggregator at layer {i}: {[xx.shape for xx in x]}")
                 # Stack the list into a single tensor [B, n_experts, ...] and aggregate
                 x_stacked = torch.stack(x, dim=1)
+                outputs['expert_representations'] = x_stacked
                 x = self.aggregator(x_stacked)
+                outputs['aggregated_representation'] = x
                 #print(f"After aggregator at layer {i}: {x.shape}")
                 
-                # Store the result of the aggregation as the expert representation
-                outputs['expert_representations'] = x
+                
 
             # --- 3. Layer Application ---
             # This logic handles both normal processing and expert-wise processing.
@@ -227,36 +231,39 @@ class SudokuStaticScaler(StaticScaler):
 class WeightedMeanAggregator(nn.Module):
     """
     Aggregates expert representations using a learnable weighted average.
+    Supports both flat vectors [B, n_experts, D] and feature maps [B, n_experts, C, H, W].
     Initialized to strongly favor the last expert (assumed to be the identity path).
     """
-    def __init__(self, n_experts: int, initial_identity_bias: float = 10.0):
+    def __init__(self, n_experts: int, initial_identity_bias: float = 10.0, **kwargs):
         super().__init__()
-        # We create learnable logits for numerical stability
         self.logits = nn.Parameter(torch.zeros(n_experts))
-        
-        # Initialize logits to favor the last expert
         with torch.no_grad():
             self.logits[-1] = initial_identity_bias
 
     def forward(self, expert_reps: torch.Tensor) -> torch.Tensor:
         """
         Args:
-            expert_reps (torch.Tensor): Tensor of shape (B, n_reps, D)
-        
+            expert_reps (Tensor): [B, n_experts, D] or [B, n_experts, C, H, W]
         Returns:
-            torch.Tensor: Aggregated tensor of shape (B, D)
+            Tensor: Aggregated representation of shape [B, D] or [B, C, H, W]
         """
-        # Convert logits to weights that sum to 1
-        # (1, n_reps, 1) to allow for broadcasting
-        weights = F.softmax(self.logits, dim=0)[None, :, None]
-        
-        # Perform the weighted sum
-        # (B, n_reps, D) * (1, n_reps, 1) -> (B, n_reps, D)
-        # Then sum along the n_reps dimension
+        # Convert logits to weights (sum to 1 across experts)
+        weights = F.softmax(self.logits, dim=0)
+
+        # Reshape weights for broadcasting
+        # Case 1: flat vector input [B, n_experts, D]
+        if expert_reps.dim() == 3:
+            weights = weights[None, :, None]            # [1, n_experts, 1]
+        # Case 2: feature map input [B, n_experts, C, H, W]
+        elif expert_reps.dim() == 5:
+            weights = weights[None, :, None, None, None] # [1, n_experts, 1, 1, 1]
+        else:
+            raise ValueError(f"Unsupported input shape {expert_reps.shape}")
+
+        # Weighted sum over experts
         aggregated = (expert_reps * weights).sum(dim=1)
-        
         return aggregated
-        
+
 @register_model("SudokuMLPAggregator")
 class SudokuMLPAggregator(Aggregator):
     def __init__(self, n_transforms : int = 1, **kwargs):

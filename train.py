@@ -116,6 +116,41 @@ def eval_model(model, dataloader, loss_fns, device, metrics, log_prefix=None, co
         results[metric] /= len(dataloader)
     return results
 
+def resolve_module(model, path: str):
+    """
+    Resolves a dotted path into a submodule, supporting both attributes
+    and integer indices for ModuleList/Sequential.
+    Example: "layers.2" -> model.layers[2]
+             "layers.2.conv" -> model.layers[2].conv
+    """
+    current = model
+    for part in path.split("."):
+        if part.isdigit():
+            current = current[int(part)]  # ModuleList or Sequential index
+        else:
+            if not hasattr(current, part):
+                raise AttributeError(f"{current.__class__.__name__} has no attribute {part}")
+            current = getattr(current, part)
+    return current
+
+
+def unfreeze_layers(model, layers_to_unfreeze, logger):
+    """
+    Unfreezes the specified layers given by dotted paths (supports indices in ModuleList).
+    """
+    print("DEBUG: layers_to_unfreeze:", layers_to_unfreeze)
+    for layer_path in layers_to_unfreeze:
+        try:
+            layer = resolve_module(model, layer_path)
+        except AttributeError as e:
+            logger.warning(f"Could not resolve {layer_path}: {e}, skipping unfreeze.")
+            continue
+
+        for param in layer.parameters():
+            param.requires_grad = True
+
+        logger.info(f"Unfroze layer: {layer_path} ({layer.__class__.__name__})")
+
 def train_model(config, sweep_args=None):
     # Load environment variables
     load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '.env'))
@@ -231,14 +266,14 @@ def train_model(config, sweep_args=None):
         logger.info(f"Will save best model based on {checkpoint_metric_config['name']} ({checkpoint_metric_config['mode']})")
 
     # model.compile()
-
+    unfreeze_config = config['training'].get('unfreeze', None)
+    
     eval_results = eval_model(model, dataloaders['validation'], loss_fns, device, config['training']['validation_metrics'], "val", config)
     log_msg = f"Validation results at the beginning: "
     log_msg += ", ".join([f"{k}: {v:.4f}" for k, v in eval_results.items()])
     logger.info(log_msg)
     log_dict = {f"val/{k}": v for k, v in eval_results.items()}
     run.log(log_dict)
-
 
     # --- TRAINING LOOP ---
     # Set the model to train mode, or partial train mode if in partial regime
@@ -303,6 +338,29 @@ def train_model(config, sweep_args=None):
 
                 model.train()
 
+        # --- Unfreezing logic ---
+        if unfreeze_config:
+            schedule = unfreeze_config.get("schedule", [])
+            layers = unfreeze_config.get("layers", [])
+
+            # Make sure schedule and layers have the same length
+            if len(schedule) != len(layers):
+                logger.warning("Length of unfreeze schedule and layers list does not match.")
+
+            # Find all layers to unfreeze for the current epoch
+            layers_to_unfreeze = [layers[i] for i, s in enumerate(schedule) if s == epoch]
+
+            if layers_to_unfreeze:
+                unfreeze_layers(model, layers_to_unfreeze, logger)
+
+                # Reinitialize optimizer with all trainable parameters
+                parameters = filter(lambda p: p.requires_grad, model.parameters())
+                optimizer = AdamW(parameters, lr=config['training'].get('learning_rate', 0.001))
+                logger.info(f"Reinitialized optimizer after unfreezing layers {layers_to_unfreeze} at epoch {epoch}.")
+
+        logger.info(f"End of epoch {epoch}")
+        # End of epoch
+
     # Evaluate the final model on the test set
     if 'test' in dataloaders:
         eval_results = eval_model(model, dataloaders['test'], loss_fns, device, config['training']['validation_metrics'], 'test', config)
@@ -322,3 +380,5 @@ if __name__ == '__main__':
         config = yaml.safe_load(f)
 
     train_model(config, unknown)
+
+

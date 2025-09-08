@@ -6,7 +6,7 @@ training:
   epochs: 1
   eval_interval: 500
   device: "cuda:0"
-  experiment_name: "sudoku-baseline-deep-2"
+  experiment_name: "sudoku-b-localatt6-6-10"
   training_metrics: ["accuracy", "accuracy_unknown_cells"]
   validation_metrics: ["accuracy", "accuracy_unknown_cells"]
   checkpoint_metric:
@@ -15,7 +15,7 @@ training:
   logger: "sudoku_logger"
   max_samples_to_log: 16 
   seed: 42
-  scaler_regime: "full" # "partial" (only scaler and aggregator are trained) or "full" (all parameters are trained)
+  scaler_regime: "partial" # "partial" (only scaler and aggregator are trained) or "full" (all parameters are trained)
 
 dataset:
   name: "sudoku"
@@ -36,14 +36,15 @@ model:
     n_mid_layers: 3
     n_dec_layers: 0
 
-  # scaler:
-  #   name: "SudokuStaticScaler"
-  #   inj_point: 3
-  #   args:
-  #     n_transforms: 2
-  #     dim: 256
-  # aggregator:
-  #   name: "MeanAggregator"
-  #   inj_point: 5
-  #   args:
-  #     aggregate_dim: 1
+  scaler:
+    name: "SudokuStaticScaler"
+    inj_point: 6
+    args:
+      n_transforms: 6
+      dim: 512
+  aggregator:
+    name: "LocalAttentionAggregator"
+    inj_point: 10
+    args:
+      embed_dim: 9
+      n_heads: 3

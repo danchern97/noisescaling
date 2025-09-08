@@ -6,7 +6,7 @@ training:
   epochs: 1
   eval_interval: 500
   device: "cuda:0"
-  experiment_name: "sudoku-scaler-b-res-attention-2-0"
+  experiment_name: "sudoku-b-cross4-4-10"
   training_metrics: ["accuracy", "accuracy_unknown_cells"]
   validation_metrics: ["accuracy", "accuracy_unknown_cells"]
   checkpoint_metric:
@@ -20,7 +20,8 @@ training:
 dataset:
   name: "sudoku"
   path: "./data/sudoku"
-  filter_train: true
+  args:
+    filter_train: true
 
 model:
   name: "SudokuCNN"
@@ -32,19 +33,17 @@ model:
   pretrained_from_hf: "danchern/noisescaling"
   args:
     dropout: 0.5
-    n_mid_layers: 1
+    n_mid_layers: 3
     n_dec_layers: 0
 
   scaler:
     name: "SudokuStaticScaler"
-    inj_point: 0
-    args:
-      n_transforms: 2
-      dim: 128
-
-  aggregator:
-    name: "AttentionAggregator"
     inj_point: 4
     args:
+      n_transforms: 4
+      dim: 256
+  aggregator:
+    name: "CrossAttentionAggregator"
+    inj_point: 10
+    args:
       aggregate_dim: 1
-      in_features: 729
