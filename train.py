@@ -140,6 +140,9 @@ def eval_model(model, dataloader, loss_fns, device, metrics):
 _LOGGED_STATIC_RAVEN_IMAGES = False
 _RAVEN_LOGITS_COLUMNS = None
 _RAVEN_LOGITS_ROWS = []
+# Per-expert logits table for RAVEN
+_RAVEN_EXP_LOGITS_COLUMNS = None
+_RAVEN_EXP_LOGITS_ROWS = []
 
 
 def _prepare_raven_example(inputs, predictions, targets):
@@ -306,7 +309,32 @@ def log_validation_example(run, model, dataloader, device, step: int, prefix: st
             _RAVEN_LOGITS_COLUMNS = ["step"] + [f"logit_{i}" for i in range(8)]
         _RAVEN_LOGITS_ROWS.append([int(step)] + [float(x) for x in example_raven["logits"]])
         table = wandb.Table(data=_RAVEN_LOGITS_ROWS, columns=_RAVEN_LOGITS_COLUMNS)
-        run.log({f"{prefix}/example_logits_table": table})
+        payload = {f"{prefix}/example_logits_table": table}
+        # If the model supports per-expert logits, add them as a table (rows per step, columns per expert/logit)
+        try:
+            if hasattr(model, 'predict_per_expert') and callable(getattr(model, 'predict_per_expert')):
+                per_exp_logits = model.predict_per_expert(inputs_dev)
+                # per_exp_logits: (B, n_exp, 8)
+                per_exp_logits = per_exp_logits[0].detach().cpu()  # (n_exp, 8)
+                # Build/extend a W&B table similar to example_logits_table, but per-expert
+                global _RAVEN_EXP_LOGITS_COLUMNS, _RAVEN_EXP_LOGITS_ROWS
+                if _RAVEN_EXP_LOGITS_COLUMNS is None:
+                    # Columns: step, then exp_00_logit_0..7, exp_01_logit_0..7, ...
+                    cols = ["step"]
+                    n_exp_cols = per_exp_logits.shape[0]
+                    for exp_i in range(n_exp_cols):
+                        cols += [f"exp_{exp_i:02d}_logit_{j}" for j in range(per_exp_logits.shape[1])]
+                    _RAVEN_EXP_LOGITS_COLUMNS = cols
+                # Row: [step] + flattened logits per expert
+                flat_vals = []
+                for exp_i in range(per_exp_logits.shape[0]):
+                    flat_vals += [float(x) for x in per_exp_logits[exp_i].tolist()]
+                _RAVEN_EXP_LOGITS_ROWS.append([int(step)] + flat_vals)
+                exp_table = wandb.Table(data=_RAVEN_EXP_LOGITS_ROWS, columns=_RAVEN_EXP_LOGITS_COLUMNS)
+                payload[f"{prefix}/experts/example_logits_table"] = exp_table
+        except Exception:
+            pass
+        run.log(payload)
         return
 
     # Otherwise, try Maze visualization
@@ -465,14 +493,60 @@ def train_model(config):
     
     # Set up the optimizer
     if config['training'].get('scaler_regime', None) == 'full' or config['training'].get('scaler_regime', None) is None:
+        logger.info("Training in full regime")
         parameters = model.parameters()
     elif config['training'].get('scaler_regime', None) == 'partial':
+        logger.info("Training in partial regime")
         if getattr(model, 'scaler', None) is None or getattr(model, 'aggregator', None) is None:
             raise ValueError("scaler_regime 'partial' requires both model.scaler and model.aggregator to be set. Check your config.")
         parameters = list(model.scaler.parameters()) + list(model.aggregator.parameters())
 
+        # Hard-freeze all other params to avoid computing unnecessary grads
+        # (optimizer already restricts updates, but this saves memory/compute)
+        # First freeze everything
+        for p in model.parameters():
+            p.requires_grad = False
+        # Unfreeze scaler params
+        for p in model.scaler.parameters():
+            p.requires_grad = True
+        # Unfreeze aggregator only if it has parameters
+        try:
+            has_params = any(True for _ in model.aggregator.parameters())
+        except Exception:
+            has_params = False
+        if has_params:
+            for p in model.aggregator.parameters():
+                p.requires_grad = True
+
     else:
         raise ValueError(f"Invalid scaler regime: {config['training']['scaler_regime']}. Supported regimes are 'full' and 'partial'.")
+
+    # For MazesBig/Raven, print which parameters will be trained in partial regime
+    if model_config.get('name') in ('MazesBigAutoencoder', 'raven_resnet18') and config['training'].get('scaler_regime', None) == 'partial':
+        opt_param_ids = {id(p) for p in parameters}
+        trained = []
+        total_trained = 0
+        for name, param in model.named_parameters():
+            if id(param) in opt_param_ids:
+                trained.append(f"{name} ({param.numel()})")
+                total_trained += param.numel()
+        logger.info(f"Optimizer will train the following parameters ({model_config.get('name')}, partial regime):")
+        for t in trained:
+            logger.info(f" - {t}")
+        logger.info(f"Total optimizer parameter count: {total_trained}")
+
+    # Fail fast: empty parameter list in partial regime (e.g., n_transforms=1 and param-free aggregator)
+    if config['training'].get('scaler_regime', None) == 'partial' and (not any(True for _ in parameters)):
+        agg_name = model_config.get('aggregator', {}).get('name') if isinstance(model_config.get('aggregator'), dict) else None
+        scaler_cfg = model_config.get('scaler', {}).get('args', {}) if isinstance(model_config.get('scaler'), dict) else {}
+        n_transforms = scaler_cfg.get('n_transforms')
+        raise ValueError(
+            "Partial regime selected, but optimizer has no parameters. "
+            "Likely because the static scaler has n_transforms=1 (identity only) and the aggregator is parameter-free. "
+            f"Current aggregator={agg_name}, n_transforms={n_transforms}. "
+            "Increase n_transforms (>=2) or use a learnable aggregator (e.g., WeightedMean/Attention), "
+            "or set training.scaler_regime to 'full'."
+        )
     optimizer = AdamW(parameters, lr=config['training'].get('learning_rate', 0.001))
     scheduler_config = config['training'].get('scheduler', None)
     scheduler = None
@@ -501,14 +575,30 @@ def train_model(config):
     for epoch in range(config['training'].get('epochs', 100)):
         for _, (inputs, targets, _) in enumerate(tqdm(dataloaders['train'], desc='Training')):
             
-            # 2. THE FIX: If in partial regime, selectively set baseline modules to eval mode
+            # 2. THE FIX: If in partial regime, set non-scaler parts to eval.
             if config['training'].get('scaler_regime', None) == 'partial':
-                if hasattr(model, 'enc'): model.enc.eval()
-                if hasattr(model, 'mid_1'): model.mid_1.eval()
-                if hasattr(model, 'mid_2'): model.mid_2.eval()
-                if hasattr(model, 'mid_3'): model.mid_3.eval()
-                if hasattr(model, 'mid_4'): model.mid_4.eval()
-                if hasattr(model, 'dec'): model.dec.eval()
+                model_name = model_config.get('name')
+                if model_name == 'SudokuCNN':
+                    # Sudoku-specific modules
+                    if hasattr(model, 'enc'): model.enc.eval()
+                    if hasattr(model, 'mid_1'): model.mid_1.eval()
+                    if hasattr(model, 'mid_2'): model.mid_2.eval()
+                    if hasattr(model, 'mid_3'): model.mid_3.eval()
+                    if hasattr(model, 'mid_4'): model.mid_4.eval()
+                    if hasattr(model, 'dec'): model.dec.eval()
+                elif model_name in ('raven_resnet18', 'MazesBigAutoencoder', 'MazeAutoencoder'):
+                    # For Raven and Mazes models: eval everything, then re-enable scaler (and aggregator if it has params)
+                    model.eval()
+                    if getattr(model, 'scaler', None) is not None:
+                        model.scaler.train()
+                    if getattr(model, 'aggregator', None) is not None:
+                        # Train only if aggregator has learnable parameters
+                        try:
+                            has_params = any(True for _ in model.aggregator.parameters())
+                        except Exception:
+                            has_params = False
+                        if has_params:
+                            model.aggregator.train()
 
             # if inputs is a tuple pass all of them to device
             if isinstance(inputs, tuple):
@@ -566,7 +656,7 @@ def train_model(config):
                 # Save model checkpoint
                 model_path = os.path.join(model_dir, f"model_{step}.pt")
                 torch.save(model.state_dict(), model_path)
-                run.save(model_path)
+                # run.save(model_path)
                 # Delete old checkpoints
                 cleanup_checkpoints(model_dir, logger, keep_last=5)
 

@@ -135,6 +135,72 @@ class RavenResNet18(nn.Module):
             pred, _, _ = self.upstream(images, embedding, indicator)
             return pred
 
+    @torch.no_grad()
+    def predict_per_expert(self, inputs) -> torch.Tensor:
+        """
+        Returns stacked logits per expert without aggregation.
+        Shape: (B, n_experts, 8)
+        If no scaler/aggregator configured, returns shape (B, 1, 8).
+        """
+        images, embedding, indicator = inputs
+        images = images.contiguous()
+        embedding = embedding.contiguous()
+        indicator = indicator.contiguous()
+
+        if self.scaler is None or self.aggregator is None:
+            pred, _, _ = self.upstream(images, embedding, indicator)
+            return pred.unsqueeze(1)
+
+        ip = self.injection_point
+
+        if ip == 'embedding':
+            embeddings_reps = self.scaler(embedding)  # (B, n_reps, 6, 300)
+            logits_list = []
+            for i in range(embeddings_reps.shape[1]):
+                emb_i = embeddings_reps[:, i].contiguous()
+                pred, _, _ = self.upstream(images, emb_i, indicator)
+                logits_list.append(pred)
+            return torch.stack(logits_list, dim=1)
+
+        elif ip == 'image':
+            images_reps = self.scaler(images)  # (B, n_reps, 16, H, W)
+            logits_list = []
+            for i in range(images_reps.shape[1]):
+                img_i = images_reps[:, i].contiguous()
+                pred, _, _ = self.upstream(img_i, embedding, indicator)
+                logits_list.append(pred)
+            return torch.stack(logits_list, dim=1)
+
+        elif ip == 'pre_tree':
+            features = self.upstream.resnet18(images)  # (B, 512)
+            features_reps = self.scaler(features)      # (B, n_reps, 512)
+            logits_list = []
+            for i in range(features_reps.shape[1]):
+                feat_i = features_reps[:, i].contiguous()
+                feat_tree_i = self.upstream.fc_tree_net(feat_i.view(-1, 1, 512), embedding, indicator)
+                final_i = feat_i + 1.0 * feat_tree_i
+                out_i = self.upstream.mlp(final_i)
+                pred_i = out_i[:, 0:8]
+                logits_list.append(pred_i)
+            return torch.stack(logits_list, dim=1)
+
+        elif ip == 'post_tree':
+            features = self.upstream.resnet18(images)             # (B, 512)
+            features_tree = self.upstream.fc_tree_net(features.view(-1, 1, 512), embedding, indicator)
+            final_features = features + 1.0 * features_tree       # (B, 512)
+            final_reps = self.scaler(final_features)              # (B, n_reps, 512)
+            logits_list = []
+            for i in range(final_reps.shape[1]):
+                fin_i = final_reps[:, i].contiguous()
+                out_i = self.upstream.mlp(fin_i)
+                pred_i = out_i[:, 0:8]
+                logits_list.append(pred_i)
+            return torch.stack(logits_list, dim=1)
+
+        else:
+            pred, _, _ = self.upstream(images, embedding, indicator)
+            return pred.unsqueeze(1)
+
 # Alias to match authors' model name in configs if desired
 MODEL_REGISTRY["Resnet18_MLP"] = RavenResNet18
 

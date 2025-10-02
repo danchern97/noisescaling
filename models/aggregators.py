@@ -173,3 +173,68 @@ class CrossAttentionAggregator(Aggregator):
         aggregated_representation = attended_context.squeeze(1)
 
         return aggregated_representation
+
+
+@register_model("RavenCrossAttentionAggregator")
+class RavenCrossAttentionAggregator(CrossAttentionAggregator):
+    """
+    Convenience alias for cross-attention aggregation on Raven logits.
+    Expects input of shape (B, n_reps, 8) and returns (B, 8).
+    """
+    def __init__(self, aggregate_dim: int = 1, **kwargs):
+        super().__init__(aggregate_dim=aggregate_dim, **kwargs)
+
+
+@register_model("MazesBigCrossAttentionAggregator")
+class MazesBigCrossAttentionAggregator(Aggregator):
+    """
+    Cross-attention-style, parameter-free aggregator for per-expert masks.
+
+    Input:  (B, n_reps, 1, H, W) — typically logits per expert
+    Output: (B, 1, H, W) — weighted average across experts per pixel
+
+    We compute attention weights per pixel across experts by softmaxing
+    the expert logits and taking a weighted sum along the experts dimension.
+    """
+    def __init__(self, aggregate_dim: int = 1, **kwargs):
+        if aggregate_dim != 1:
+            raise ValueError("MazesBigCrossAttentionAggregator aggregates along dim=1 (experts)")
+        super().__init__(aggregate_dim=aggregate_dim, **kwargs)
+
+    def forward(self, representations: torch.Tensor) -> torch.Tensor:
+        # representations: (B, n_reps, 1, H, W)
+        if representations.dim() != 5 or representations.size(2) != 1:
+            raise ValueError(f"Expected (B, n_reps, 1, H, W), got {representations.shape}")
+        # Softmax over experts for each pixel
+        weights = F.softmax(representations, dim=self.aggregate_dim)  # (B, n_reps, 1, H, W)
+        aggregated = torch.sum(weights * representations, dim=self.aggregate_dim)  # (B, 1, H, W)
+        return aggregated
+
+
+@register_model("SpatialWeightedMeanAggregator")
+class SpatialWeightedMeanAggregator(nn.Module):
+    """
+    Learnable weighted mean across experts that supports arbitrary trailing
+    spatial dimensions.
+
+    Works for inputs shaped (B, n_experts, ...), e.g. Mazes/MazesBig masks
+    (B, n_experts, 1, H, W). The weights are expert-specific and shared over
+    all trailing positions.
+    """
+    def __init__(self, n_experts: int, initial_identity_bias: float = 10.0):
+        super().__init__()
+        self.logits = nn.Parameter(torch.zeros(n_experts))
+        with torch.no_grad():
+            self.logits[-1] = initial_identity_bias
+
+    def forward(self, expert_reps: torch.Tensor) -> torch.Tensor:
+        # expert_reps: (B, n_experts, ...)
+        if expert_reps.dim() < 3:
+            raise ValueError(f"Expected at least 3D input (B, n_experts, ...), got {expert_reps.shape}")
+        # Softmax over experts -> (n_experts,)
+        weights_1d = F.softmax(self.logits, dim=0)
+        # Broadcast to (1, n_experts, 1, 1, ...)
+        expand_dims = [1] * (expert_reps.dim() - 2)
+        weights = weights_1d.view(1, -1, *expand_dims)
+        # Weighted sum along expert dimension
+        return (expert_reps * weights).sum(dim=1)
